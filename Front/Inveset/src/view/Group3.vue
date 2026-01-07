@@ -1,38 +1,7 @@
 <template>
   <div class="game-container">
     
-    <div v-if="currentPhase === 'INTRO'" class="intro-content fade-in">
-      <h1 class="intro-title">Instructions</h1>
-      
-      <div class="intro-body">
-        <p>
-          ยินดีต้อนรับเข้าสู่การตอบแบบสอบถาม และขอบคุณที่เข้าร่วมครั้งนี้ในการตอบแบบสอบถามคุณจะต้องการตัดสินใจหลายครั้ง 
-          โดยไม่มีคำตอบถูกหรือผิด เราสนใจเพียงว่าผู้เข้าร่วมตัดสินใจอย่างไร
-        </p>
-        <p>
-          เพื่อเป็นการขอบคุณ คุณจะได้รับค่าตอบแทนตั้งต้นจำนวน 50 บาท นอกจากนี้คุณจะสามารถได้รับเงินรางวัลเพิ่มเติมจากผลกำไรสุดท้ายที่คุณทำได้
-        </p>
-        <p>
-          รางวัลและค่าตอบแทนสุดท้ายที่ได้จากการทำการตอบแบบสอบถาม จะจ่ายหลังจากการตอบแบบสอบถามเสร็จสิ้น
-        </p>
-      </div>
-
-      <div class="instruction-box">
-        <ul>
-          <li>ในการตอบแบบสอบถามนี้ คุณจะทำการตัดสินใจทั้งหมด 12 รอบ</li>
-          <li>สถานการณ์เศรษฐกิจโลก ที่อาจจะมีส่งผลต่อหุ้นที่เราจะซื้อ</li>
-          <li>จากนั้นกรุณาเลือกซื้อได้ 3 จาก 5 ตัวเลือก: A/ B/ C/ D/ E โดยรอบแรกคุณจะสามารถทำได้แค่การซื้อเท่านั้น หลังจากรอบสองเป็นต้นไปถึงจะสามารถทำการซื้อและขายได้</li>
-          <li>เมื่อสิ้นสุดรอบที่ 12 จะมีแบบสอบถามเพื่อเก็บข้อมูลความพึงพอใจและความรู้สึกของผู้เข้าร่วม</li>
-          <li>หลังจบการทดลอง เราจะคำนวณกำไรรวมจาก 12 รอบ ผู้ที่ได้กำไรรวมสูงสุด 3 อันดับแรกจะได้รับรางวัล</li>
-        </ul>
-      </div>
-
-      <div class="intro-action">
-        <button class="btn-pink" @click="startGame">Next</button>
-      </div>
-    </div>
-
-    <div class="header" v-if="!isGameOver && currentPhase !== 'INTRO'">
+    <div class="header" v-if="!isGameOver">
       <div class="round-info">
         Round {{ currentRound }} of {{ totalRounds }}
       </div>
@@ -156,7 +125,7 @@
 
     <div v-else-if="isGameOver" class="summary-content fade-in">
         <div class="summary-card">
-            <h2>🎉 สรุปผลการลงทุน Group 1 🎉</h2>
+            <h2>🎉 สรุปผลการลงทุน 🎉</h2>
             <div class="summary-details">
                 <p>เงินสดคงเหลือ: <span>{{ formatCurrency(currentCash) }}</span> บาท</p>
                 <p>มูลค่าหุ้นในพอร์ต: <span>{{ formatCurrency(calculatePortfolioValue()) }}</span> บาท</p>
@@ -198,6 +167,7 @@ const situations = [
     "สิ้นสุดช่วงการซื้อขาย ทุกตำแหน่งต้องถูกปิดเพื่อคำนวณผลลัพธ์สุดท้าย"
 ];
 
+// (เพิ่มใหม่) ข้อมูลคำแนะนำจาก AI ตามแต่ละรอบ
 const aiAdvices = [
     "ช่วงเริ่มต้น หุ้นที่มีความเสถียรมักช่วยรักษาความยืดหยุ่นในการตัดสินใจระยะถัดไป",
     "ความคาดหวังของตลาดอาจมาก่อนข้อมูลจริง\nผู้ลงทุนอาจพิจารณาความเสี่ยงจากการตัดสินใจล่วงหน้า",
@@ -231,7 +201,7 @@ const allRoundPrices = [
 const currentRound = ref(1);
 const currentCash = ref(initialCash);
 const isGameOver = ref(false);
-const currentPhase = ref('INTRO'); 
+const currentPhase = ref('SITUATION');
 
 const myPortfolio = ref({ EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 });
 const currentStocks = ref([]);
@@ -255,13 +225,10 @@ const onCheckSelf = () => { if(decisionSelf.value) decisionAI.value = false; };
 const isDecisionMade = computed(() => decisionAI.value || decisionSelf.value);
 
 const currentSituationText = computed(() => situations[currentRound.value - 1] || "ไม่มีข้อมูลเหตุการณ์");
+// (เพิ่มใหม่) ดึงข้อความ AI ตามรอบ
 const currentAiAdvice = computed(() => aiAdvices[currentRound.value - 1] || "ไม่มีคำแนะนำ");
 
 onMounted(() => { loadRoundData(1); });
-
-const startGame = () => {
-    currentPhase.value = 'SITUATION';
-};
 
 const goToTradingPhase = () => {
     currentPhase.value = 'TRADING';
@@ -297,7 +264,7 @@ const restartGame = () => {
     currentRound.value = 1;
     currentCash.value = initialCash;
     isGameOver.value = false;
-    currentPhase.value = 'INTRO';
+    currentPhase.value = 'SITUATION';
     myPortfolio.value = { EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 };
     loadRoundData(1);
 };
@@ -346,6 +313,7 @@ const calculatePortfolioValue = () => {
 .situation-box { background: white; border: 2px solid #333; padding: 60px 40px; font-size: 2.2rem; font-weight: 500; color: #333; margin-bottom: 40px; box-shadow: 4px 4px 0px rgba(0,0,0,0.1); min-height: 250px; display: flex; align-items: center; justify-content: center; }
 
 /* TRADING PHASE */
+/* (เพิ่มใหม่) สไตล์สำหรับกล่อง AI */
 .ai-advice-section {
     margin-bottom: 25px;
 }
@@ -362,6 +330,7 @@ const calculatePortfolioValue = () => {
     text-align: center;
     border-radius: 4px;
 }
+
 .ml-2.pointer {
     margin-left: 0.5rem;
     cursor: pointer;
@@ -398,56 +367,4 @@ const calculatePortfolioValue = () => {
 .summary-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
 .summary-details { font-size: 1.2rem; margin: 20px 0; }
 .grand-total { color: #27ae60; font-size: 2rem; margin-top: 10px; }
-
-/* --- INTRO PHASE --- */
-.intro-content {
-  text-align: center;
-  color: #333;
-  padding: 20px;
-}
-.intro-title {
-  font-size: 3rem;
-  font-weight: bold;
-  margin-bottom: 20px;
-  color: #000;
-}
-.intro-body {
-  font-size: 1.2rem;
-  line-height: 1.6;
-  margin-bottom: 30px;
-}
-.instruction-box {
-  background: white;
-  border: 2px solid #000000;
-  padding: 30px;
-  text-align: left;
-  max-width: 900px;
-  margin: 0 auto 40px auto;
-  font-size: 1.3rem;
-  border-radius: 10px;
-}
-.instruction-box ul {
-  list-style-type: disc;
-  padding-left: 40px;
-}
-.instruction-box li {
-  margin-bottom: 10px;
-}
-.btn-pink {
-  background-color: #3498db;
-  border: 2px solid #ffffff;
-  color: #000;
-  padding: 10px 80px;
-  font-size: 1.5rem;
-  cursor: pointer;
-  font-family: inherit;
-  transition: transform 0.1s;
-}
-.btn-pink:hover {
-  background-color: #3498db;
-  transform: scale(1.02);
-}
-.btn-pink:active {
-  transform: scale(0.98);
-}
 </style>

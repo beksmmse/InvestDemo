@@ -163,7 +163,7 @@
 
     <div v-else-if="isGameOver" class="summary-content fade-in">
         <div class="summary-card">
-            <h2>🎉 สรุปผลการลงทุน Group 1 🎉</h2>
+            <h2>🎉 สรุปผลการลงทุน 🎉</h2>
             <div class="summary-details">
                 <p>เงินสดคงเหลือ: <span>{{ formatCurrency(currentCash) }}</span> บาท</p>
                 <p>มูลค่าหุ้นในพอร์ต: <span>{{ formatCurrency(calculatePortfolioValue()) }}</span> บาท</p>
