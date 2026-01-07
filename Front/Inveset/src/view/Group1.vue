@@ -24,7 +24,7 @@
     <div v-else-if="!isGameOver && currentPhase === 'TRADING'" class="trading-content fade-in">
       
       <div class="ai-advice-section">
-          <h3 class="ai-header"> คำแนะนำจาก AI</h3>
+          <h3 class="ai-header">🤖 คำแนะนำจาก AI</h3>
           <div class="ai-box">
               {{ currentAiAdvice }}
           </div>
@@ -111,12 +111,15 @@
                 <div v-else-if="!isDecisionMade" class="error-msg">
                     ⚠️ กรุณาเลือกวิธีการตัดสินใจ
                 </div>
+                <div v-else-if="currentRound === 1 && totalPurchaseThisRound <= 0" class="error-msg">
+                    ⚠️ รอบแรกบังคับต้องซื้อหุ้นอย่างน้อย 1 ตัว
+                </div>
                 
                 <Button 
                     :label="currentRound < totalRounds ? 'ยืนยัน & ไปรอบถัดไป' : 'จบเกม & ดูผลลัพธ์'" 
                     @click="handleEndRound" 
                     class="btn-action" 
-                    :disabled="totalPurchaseThisRound > currentCash || !isDecisionMade"
+                    :disabled="totalPurchaseThisRound > currentCash || !isDecisionMade || (currentRound === 1 && totalPurchaseThisRound <= 0)"
                 />
             </div>
         </div>
@@ -167,7 +170,6 @@ const situations = [
     "วิกฤตโรคระบาดใหม่ เริ่มส่งผลกระทบต่อการท่องเที่ยว"
 ];
 
-// (เพิ่มใหม่) ข้อมูลคำแนะนำจาก AI ตามแต่ละรอบ
 const aiAdvices = [
     "กระจายความเสี่ยงในหุ้นพื้นฐานดี เนื่องจากตลาดยังไม่มีทิศทางชัดเจน",
     "หุ้นกลุ่มธนาคาร (SMC) มักได้ประโยชน์จากแนวโน้มดอกเบี้ยขาขึ้น",
@@ -225,7 +227,6 @@ const onCheckSelf = () => { if(decisionSelf.value) decisionAI.value = false; };
 const isDecisionMade = computed(() => decisionAI.value || decisionSelf.value);
 
 const currentSituationText = computed(() => situations[currentRound.value - 1] || "ไม่มีข้อมูลเหตุการณ์");
-// (เพิ่มใหม่) ดึงข้อความ AI ตามรอบ
 const currentAiAdvice = computed(() => aiAdvices[currentRound.value - 1] || "ไม่มีคำแนะนำ");
 
 onMounted(() => { loadRoundData(1); });
@@ -243,7 +244,11 @@ const totalPurchaseThisRound = computed(() => {
 });
 
 const handleEndRound = () => {
+    // 1. เงินไม่พอ หรือ ยังไม่เลือก Checkbox -> หยุด
     if (totalPurchaseThisRound.value > currentCash.value || !isDecisionMade.value) return;
+
+    // 2. (เพิ่มใหม่) ถ้าเป็นรอบที่ 1 และยอดซื้อเป็น 0 -> หยุด
+    if (currentRound.value === 1 && totalPurchaseThisRound.value <= 0) return;
     
     currentCash.value -= totalPurchaseThisRound.value;
     currentStocks.value.forEach(stock => {
@@ -313,23 +318,9 @@ const calculatePortfolioValue = () => {
 .situation-box { background: white; border: 2px solid #333; padding: 60px 40px; font-size: 2.2rem; font-weight: 500; color: #333; margin-bottom: 40px; box-shadow: 4px 4px 0px rgba(0,0,0,0.1); min-height: 250px; display: flex; align-items: center; justify-content: center; }
 
 /* TRADING PHASE */
-/* (เพิ่มใหม่) สไตล์สำหรับกล่อง AI */
-.ai-advice-section {
-    margin-bottom: 25px;
-}
-.ai-header {
-    font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 8px;
-}
-.ai-box {
-    background-color: white;
-    border: 2px solid #333;
-    padding: 20px;
-    font-size: 1.4rem;
-    color: #333;
-    font-weight: 500;
-    text-align: center;
-    border-radius: 4px;
-}
+.ai-advice-section { margin-bottom: 25px; }
+.ai-header { font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 8px; }
+.ai-box { background-color: white; border: 2px solid #333; padding: 20px; font-size: 1.4rem; color: #333; font-weight: 500; text-align: center; border-radius: 4px; }
 
 .main-content { display: flex; gap: 30px; flex-wrap: wrap; }
 .panel { flex: 1; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); min-width: 350px; }
