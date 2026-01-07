@@ -95,11 +95,11 @@
                     <hr class="divider-sm">
                     <div class="checkbox-item">
                         <Checkbox v-model="decisionAI" :binary="true" inputId="cb-ai" @change="onCheckAI" />
-                        <label for="cb-ai" class="ml-2 pointer"> ฉันตัดสินใจตามคำแนะนำของ AI</label>
+                        <label for="cb-ai" class="ml-2 pointer">ฉันตัดสินใจตามคำแนะนำของ AI</label>
                     </div>
                     <div class="checkbox-item mt-2">
                         <Checkbox v-model="decisionSelf" :binary="true" inputId="cb-self" @change="onCheckSelf" />
-                        <label for="cb-self" class="ml-2 pointer"> ฉันตัดสินใจด้วยตัวเอง</label>
+                        <label for="cb-self" class="ml-2 pointer">ฉันตัดสินใจด้วยตัวเอง</label>
                     </div>
                 </div>
             </div>
@@ -329,6 +329,11 @@ const calculatePortfolioValue = () => {
     font-weight: 500;
     text-align: center;
     border-radius: 4px;
+}
+
+.ml-2.pointer {
+    margin-left: 0.5rem;
+    cursor: pointer;
 }
 
 .main-content { display: flex; gap: 30px; flex-wrap: wrap; }
