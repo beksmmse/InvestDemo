@@ -142,9 +142,7 @@
 
         </div>
 
-        <div class="flex justify-end mt-8" style="width: 80%;">
-             <button class="btn-next-step" @click="confirmAndNextRound">Next</button>
-        </div>
+
     </div>
 
     <div v-else-if="isGameOver" class="summary-content fade-in">
