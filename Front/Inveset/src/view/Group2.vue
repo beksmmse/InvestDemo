@@ -1,7 +1,35 @@
 <template>
   <div class="game-container">
+
+    <div v-if="currentPhase === 'INTRO'" class="intro-content fade-in">
+      <h1 class="intro-title">Instructions</h1>
+      
+      <div class="intro-body">
+        <p>
+          ยินดีต้อนรับเข้าสู่กิจกรรม และขอบคุณที่เข้าร่วมครั้งนี้ ในกิจกรรมนี้คุณจะต้องการตัดสินใจหลายครั้ง
+          โดยไม่มีคำตอบถูกหรือผิด เราสนใจเพียงว่าผู้เข้าร่วมตัดสินใจอย่างไร
+        </p>
+        <p>
+          เพื่อเป็นการขอบคุณ คุณจะได้รับค่าตอบแทนตั้งต้นจำนวน 50 บาท
+          <br>ค่าตอบแทนที่ได้จากการทำกิจกรรม จะจ่ายหลังจากการตอบแบบสอบถามเสร็จสิ้น
+        </p>
+      </div>
+
+      <div class="instruction-box">
+        <ul>
+          <li>ในการตอบแบบสอบถามนี้ คุณจะทำการตัดสินใจทั้งหมด 12 รอบ</li>
+          <li>สถานการณ์เศรษฐกิจโลก ที่อาจจะมีส่งผลต่อหุ้นที่เราจะซื้อ</li>
+          <li>จากนั้นกรุณาเลือกซื้อได้ 3 จาก 5 ตัวเลือก: A/ B/ C/ D/ E โดยรอบแรกคุณจะสามารถทำได้แค่การซื้อเท่านั้น หลังจากรอบสองเป็นต้นไปถึงจะสามารถทำการซื้อและขายได้</li>
+          <li>เมื่อสิ้นสุดรอบที่ 12 จะมีแบบสอบถามเพื่อเก็บข้อมูลความพึงพอใจและความรู้สึกของผู้เข้าร่วม</li>
+        </ul>
+      </div>
+
+      <div class="intro-action">
+        <button class="btn-pink" @click="startGame">Next</button>
+      </div>
+    </div>
     
-    <div class="header" v-if="!isGameOver">
+    <div class="header" v-if="!isGameOver && currentPhase !== 'INTRO'">
       <div class="round-info">
         Round {{ currentRound }} of {{ totalRounds }}
       </div>
@@ -141,8 +169,6 @@
             </div>
 
         </div>
-
-
     </div>
 
     <div v-else-if="isGameOver" class="summary-content fade-in">
@@ -223,7 +249,7 @@ const allRoundPrices = [
 const currentRound = ref(1);
 const currentCash = ref(initialCash);
 const isGameOver = ref(false);
-const currentPhase = ref('SITUATION'); // SITUATION -> TRADING -> AI_ADVICE -> (Loop)
+const currentPhase = ref('INTRO'); // เริ่มต้นที่หน้า Intro
 
 const myPortfolio = ref({ EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 });
 const currentStocks = ref([]);
@@ -246,6 +272,11 @@ const currentAIAdviceText = computed(() => aiAdviceList[currentRound.value - 1] 
 onMounted(() => { loadRoundData(1); });
 
 // --- Navigation Flow ---
+
+const startGame = () => {
+    currentPhase.value = 'SITUATION';
+    window.scrollTo(0,0);
+}
 
 const goToTradingPhase = () => {
     currentPhase.value = 'TRADING';
@@ -304,7 +335,7 @@ const restartGame = () => {
     currentRound.value = 1;
     currentCash.value = initialCash;
     isGameOver.value = false;
-    currentPhase.value = 'SITUATION';
+    currentPhase.value = 'INTRO'; // กลับไปหน้า Intro
     myPortfolio.value = { EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 };
     loadRoundData(1);
 };
@@ -343,6 +374,56 @@ const calculatePortfolioValue = () => {
 .fade-in { animation: fadeIn 0.5s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+/* --- INTRO PHASE CSS --- */
+.intro-content {
+    text-align: center;
+    padding: 20px 40px;
+}
+.intro-title {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #000;
+}
+.intro-body {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    color: #333;
+}
+.instruction-box {
+    border: 2px solid #000;
+    background-color: white;
+    padding: 30px;
+    text-align: left;
+    margin-bottom: 40px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+}
+.instruction-box ul {
+    list-style-type: disc;
+    padding-left: 40px;
+}
+.instruction-box li {
+    margin-bottom: 10px;
+}
+.btn-pink {
+    background-color: #3498db; /* Pink color similar to image */
+    color: #000;
+    border: 2px solid #fffbfb;
+    padding: 15px 80px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.1s;
+}
+.btn-pink:hover {
+    background-color: #3498db;
+}
+.btn-pink:active {
+    transform: scale(0.98);
+}
+
 /* --- Header --- */
 .header {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0;
@@ -367,7 +448,7 @@ const calculatePortfolioValue = () => {
 .panel { flex: 1; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); min-width: 350px; }
 .panel-title { margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; color: #2c3e50; border-left: 5px solid #3498db; padding-left: 10px; }
 
-/* --- AI ADVICE PHASE (NEW CSS) --- */
+/* --- AI ADVICE PHASE --- */
 .ai-content { display: flex; flex-direction: column; align-items: center; padding: 20px; }
 .ai-header { font-size: 3rem; font-weight: bold; color: #222; margin-bottom: 30px; }
 
@@ -419,18 +500,14 @@ const calculatePortfolioValue = () => {
     transition: all 0.2s;
 }
 
-/* --- แก้ไขสีปุ่ม ตัดสินใจใหม่ ให้เป็นสีเดียวกับ btn-action --- */
 .btn-redecide {
-    /* background-color: #d8b4fe;  สีเดิม (ม่วงอ่อน) */
-    /* color: #000; สีเดิม */
-    background-color: #3498db; /* สีน้ำเงินใหม่ */
+    background-color: #3498db; 
     color: white;
-    border: none; /* ลบขอบเดิมของ .btn-ai ออก */
-    border-radius: 6px; /* เพิ่มความโค้งมน */
+    border: none;
+    border-radius: 6px; 
 }
 .btn-redecide:hover { 
-    /* background-color: #c084fc; สีเดิม */
-    background-color: #2980b9; /* สี hover ใหม่ */
+    background-color: #2980b9; 
 }
 
 .btn-confirm {
@@ -442,32 +519,6 @@ const calculatePortfolioValue = () => {
 .decision-remark {
     margin-top: 10px;
     font-size: 0.9rem;
-}
-
-/* --- แก้ไขสีปุ่ม Next ให้เป็นสีเดียวกับ btn-action --- */
-.btn-next-step {
-    /* background-color: #e9d5ff; สีเดิม (ม่วงอ่อนมาก) */
-    /* border: 2px solid #000; ขอบเดิม */
-    background-color: #3498db; /* สีน้ำเงินใหม่ */
-    color: white;
-    border: none;
-    border-radius: 6px; /* เพิ่มความโค้งมน */
-
-    /* รักษาสไตล์การจัดวางเดิมไว้ */
-    padding: 10px 40px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.2s;
-}
-.btn-next-step:hover { 
-    /* background-color: #d8b4fe; สีเดิม */
-    background-color: #2980b9; /* สี hover ใหม่ */
-}
-
-.ml-2.pointer {
-    margin-left: 0.5rem;
-    cursor: pointer;
 }
 
 
@@ -490,7 +541,7 @@ const calculatePortfolioValue = () => {
 .total-amount { font-weight: bold; color: #e74c3c; font-size: 1.2rem; }
 
 .action-area { margin-top: 20px; text-align: right; }
-/* สไตล์ต้นแบบที่เราต้องการให้เหมือน */
+
 .btn-action {
     background-color: #3498db !important; border: none !important; padding: 12px 30px !important;
     font-size: 1.1rem !important; border-radius: 6px !important; transition: background-color 0.2s;
