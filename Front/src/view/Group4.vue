@@ -1,0 +1,605 @@
+<template>
+  <div class="game-container">
+
+        <div v-if="currentPhase === 'INTRO'" class="intro-content fade-in">
+            <h1 class="intro-title">Instructions</h1>
+            
+            <div class="intro-body">
+                <p>
+                ยินดีต้อนรับเข้าสู่การตอบแบบสอบถาม และขอบคุณที่เข้าร่วมครั้งนี้ในการตอบแบบสอบถามคุณจะต้องการตัดสินใจหลายครั้ง 
+                โดยไม่มีคำตอบถูกหรือผิด เราสนใจเพียงว่าผู้เข้าร่วมตัดสินใจอย่างไร
+                </p>
+                <p>
+                เพื่อเป็นการขอบคุณ คุณจะได้รับค่าตอบแทนตั้งต้นจำนวน 50 บาท นอกจากนี้คุณจะสามารถได้รับเงินรางวัลเพิ่มเติมจากผลกำไรสุดท้ายที่คุณทำได้
+                </p>
+                <p>
+                รางวัลและค่าตอบแทนสุดท้ายที่ได้จากการทำการตอบแบบสอบถาม จะจ่ายหลังจากการตอบแบบสอบถามเสร็จสิ้น
+                </p>
+            </div>
+
+            <div class="instruction-box">
+                <ul>
+                <li>ในการตอบแบบสอบถามนี้ คุณจะทำการตัดสินใจทั้งหมด 12 รอบ</li>
+                <li>สถานการณ์เศรษฐกิจโลก ที่อาจจะมีส่งผลต่อหุ้นที่เราจะซื้อ</li>
+                <li>จากนั้นกรุณาเลือกซื้อได้ 3 จาก 5 ตัวเลือก: A/ B/ C/ D/ E โดยรอบแรกคุณจะสามารถทำได้แค่การซื้อเท่านั้น หลังจากรอบสองเป็นต้นไปถึงจะสามารถทำการซื้อและขายได้</li>
+                <li>เมื่อสิ้นสุดรอบที่ 12 จะมีแบบสอบถามเพื่อเก็บข้อมูลความพึงพอใจและความรู้สึกของผู้เข้าร่วม</li>
+                <li>หลังจบการทดลอง เราจะคำนวณกำไรรวมจาก 12 รอบ ผู้ที่ได้กำไรรวมสูงสุด 3 อันดับแรกจะได้รับรางวัล</li>
+                </ul>
+            </div>
+
+            <div class="intro-action">
+                <button class="btn-pink" @click="startGame">Next</button>
+            </div>
+            </div>
+    
+
+    <div v-if="!isGameOver && currentPhase === 'SITUATION'" class="situation-content fade-in">
+        <h1 class="situation-header">สถานการณ์</h1>
+        
+        <div class="situation-box">
+            <p>{{ currentSituationText }}</p>
+        </div>
+
+        <div class="action-area center-right">
+            <Button label="Next (ไปหน้าซื้อขาย)" @click="goToTradingPhase" class="btn-action p-button-lg" />
+        </div>
+    </div>
+
+    <div v-else-if="!isGameOver && currentPhase === 'TRADING'" class="trading-content fade-in">
+      
+      <div class="main-content">
+        
+        <div class="panel left-panel">
+            <h3 class="panel-title">ราคาตลาด (Round {{ currentRound }})</h3>
+            <DataTable :value="currentStocks" showGridlines stripedRows class="clean-table">
+                <Column field="symbol" header="ชื่อหุ้น" class="font-bold text-center"></Column>
+                <Column field="industry" header="อุตสาหกรรม"></Column>
+                <Column field="price" header="ราคา (บาท)" class="text-right font-bold"></Column>
+            </DataTable>
+        </div>
+
+        <div class="panel right-panel">
+            <h3 class="panel-title">คำสั่งซื้อ</h3>
+            
+            <DataTable 
+                :value="currentStocks" 
+                showGridlines 
+                :rowClass="rowClassCalculator"
+                class="clean-table input-table"
+            >
+                <Column field="symbol" header="หุ้น" style="width: 20%">
+                    <template #body="slotProps">
+                        <span class="font-bold">{{ slotProps.data.symbol }}</span>
+                    </template>
+                </Column>
+
+                <Column header="จำนวนที่ต้องการซื้อ" style="width: 40%">
+                    <template #body="slotProps">
+                        <InputNumber 
+                            v-model="slotProps.data.buyQty" 
+                            :min="0" :max="100000"
+                            placeholder="0"
+                            :disabled="isInputDisabled(slotProps.data.buyQty)"
+                            class="w-full"
+                            inputClass="text-center"
+                        />
+                    </template>
+                </Column>
+
+                <Column header="รวมเป็นเงิน (บาท)" style="width: 40%">
+                    <template #body="slotProps">
+                        <div class="text-right font-bold" :class="{'text-green-600': slotProps.data.buyQty > 0}">
+                            {{ formatNumber((slotProps.data.price * (slotProps.data.buyQty || 0))) }}
+                        </div>
+                    </template>
+                </Column>
+            </DataTable>
+
+            <div class="footer-summary">
+                <div class="status-row">
+                    <span>เลือกแล้ว: </span>
+                    <span :class="selectedCount === 3 ? 'text-red-600 font-bold' : 'text-blue-600 font-bold'">
+                        {{ selectedCount }} / 3 ตัว
+                    </span>
+                    <span v-if="selectedCount >= 3" class="text-xs text-red-500 ml-2">(ครบโควต้า)</span>
+                </div>
+                
+                <div class="total-row">
+                    ยอดซื้อรวมรอบนี้: <span class="total-amount">{{ formatNumber(totalPurchaseThisRound) }}</span> บาท
+                </div>
+            </div>
+
+            <div class="action-area">
+                <div v-if="totalPurchaseThisRound > currentCash" class="error-msg">
+                    ⚠️ เงินสดไม่พอ
+                </div>
+                
+                <div v-else-if="currentRound === 1 && selectedCount === 0" class="error-msg">
+                    ⚠️ รอบแรกบังคับต้องซื้อหุ้นอย่างน้อย 1 ตัว
+                </div>
+                
+                <Button 
+                    label="ส่งคำสั่งซื้อ" 
+                    @click="goToAIPhase" 
+                    class="btn-action" 
+                    :disabled="totalPurchaseThisRound > currentCash || (currentRound === 1 && selectedCount === 0)"
+                />
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="!isGameOver && currentPhase === 'AI_ADVICE'" class="ai-content fade-in">
+        <h1 class="ai-header">คำแนะนำจาก AI</h1>
+
+        <div class="ai-box-main">
+            {{ currentAIAdviceText }}
+        </div>
+
+        <div class="ai-box-sub">
+            คุณสามารถตัดสินใจได้อีกรอบ
+        </div>
+
+        <div class="ai-decision-area">
+            
+            <div class="decision-col">
+                <button class="btn-ai btn-redecide" @click="backToTrading">
+                    ตัดสินใจใหม่
+                </button>
+                <p class="decision-remark text-red-500">ถ้าเลือกฝั่งนี้ให้ไปหน้าตัดสินใจใหม่</p>
+            </div>
+
+            <div class="decision-col">
+                <button class="btn-ai btn-confirm" @click="confirmAndNextRound">
+                    ยืนยันคำตอบเดิม
+                </button>
+                <p class="decision-remark text-red-500">ถ้าเลือกฝั่งนี้ให้ไปข้อถัดไปได้เลย</p>
+            </div>
+
+        </div>
+
+
+    </div>
+
+    <div v-else-if="isGameOver" class="summary-content fade-in">
+        <div class="summary-card">
+            <h2>🎉 สรุปผลการลงทุน 🎉</h2>
+            <div class="summary-details">
+                <p>เงินสดคงเหลือ: <span>{{ formatCurrency(currentCash) }}</span> บาท</p>
+                <p>มูลค่าหุ้นในพอร์ต: <span>{{ formatCurrency(calculatePortfolioValue()) }}</span> บาท</p>
+            </div>
+            <hr class="divider">
+            <h1 class="grand-total">มูลค่ารวมสุทธิ: {{ formatCurrency(currentCash + calculatePortfolioValue()) }} บาท</h1>
+            <Button label="เริ่มเกมใหม่" @click="restartGame" class="btn-action mt-4" />
+        </div>
+    </div>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import InputNumber from 'primevue/inputnumber';
+import Button from 'primevue/button';
+
+// --- Configuration ---
+const totalRounds = 12;
+const initialCash = 1000000;
+const maxSelection = 3;
+
+const situations = [
+    "เศรษฐกิจนิ่ง ตลาดยังไม่มีข่าวเด่น", 
+    "มีข่าวว่ารัฐบาลเตรียมลงทุนโครงสร้างพื้นฐานเพิ่มเติม แต่ยังไม่ประกาศรายละเอียด",
+    "เกิดการประท้วงแรงงานในภาคพลังงาน\nการผลิตบางส่วนหยุดชะงัก",
+    "ราคาน้ำมันสูงขึ้น แต่มีสัญญาณขึ้นดอกเบี้ย",
+    "รัฐประกาศควบคุมค่าบริการโทรศัพท์",
+    "บริษัทค้าปลีกกำไรเพิ่ม แต่ต้นทุนสูงขึ้น",
+    "ธนาคารกลางขึ้นดอกเบี้ยนโยบาย",
+    "การเลือกในช่วงต้นเริ่มส่งผลต่อโอกาสในปัจจุบัน บางพอร์ตเริ่มได้เปรียบ บางพอร์ตเริ่มจำกัดทางเลือก",
+    "ความตึงเครียดภูมิรัฐศาสตร์ ดันราคาน้ำมันโลก",
+    "นักวิเคราะห์ให้มุมมองเศรษฐกิจปีหน้าไม่ตรงกัน",
+    "PTX รายงานกำไรสูงกว่าคาดมาก",
+    "สิ้นสุดช่วงการซื้อขาย\nทุกตำแหน่งต้องถูกปิดเพื่อคำนวณผลลัพธ์สุดท้าย"
+];
+
+// ข้อความคำแนะนำจาก AI ในแต่ละรอบ
+const aiAdviceList = [
+    "ช่วงเริ่มต้น หุ้นที่มีความเสถียรมักช่วยรักษาความยืดหยุ่นในการตัดสินใจระยะถัดไป", // R1
+    "ความคาดหวังของตลาดอาจมาก่อนข้อมูลจริง\nผู้ลงทุนอาจพิจารณาความเสี่ยงจากการตัดสินใจล่วงหน้า", // R2
+    "แรงกดดันด้านอุปทานมักส่งผลต่อราคาพลังงานในระยะสั้น", // R3
+    "ปัจจัยบวก–ลบที่สวนทางกันอาจทำให้การตัดสินใจไม่ชัดเจน", // R4
+    "การจำกัดรายได้โดยตรงมักสะท้อนในราคาหุ้นอย่างรวดเร็ว", // R5
+    "การเติบโตที่มาพร้อมต้นทุน อาจทำให้มุมมองนักลงทุนแตกต่างกัน", // R6
+    "การเปลี่ยนแปลงดอกเบี้ยมักส่งผลต่อภาคการเงินโดยตรง", // R7
+    "มาตรการช่วยเหลืออาจลดผลกระทบได้ไม่เต็มที่", // R8
+    "สินค้าโภคภัณฑ์มักตอบสนองต่อความไม่แน่นอนเร็ว", // R9
+    "ความเห็นที่หลากหลายสะท้อนระดับความไม่แน่นอนสูง", // R10
+    "ข่าวเชิงบวกชัดเจนอาจกระตุ้นแรงซื้อระยะสั้น", // R11
+    "ผลลัพธ์สุดท้ายสะท้อนการตัดสินใจสะสมตลอดทั้งการทดลอง\nมากกว่าการเลือกเพียงรอบใดรอบหนึ่ง" // R12
+];
+
+const stockInfo = [
+  { id: 1, symbol: 'EGU', industry: 'สาธารณูปโภค' },
+  { id: 2, symbol: 'SMC', industry: 'ธนาคาร' },
+  { id: 3, symbol: 'THL', industry: 'โทรคมนาคม' },
+  { id: 4, symbol: 'CPP', industry: 'ค้าปลีก/เบ็ดเตล็ด' },
+  { id: 5, symbol: 'PTX', industry: 'พลังงาน/น้ำมัน' },
+];
+
+const allRoundPrices = [
+    [50, 120, 40, 30, 70], [51, 118, 42, 31, 75], [52, 115, 41, 32, 78],  
+    [52, 113, 39, 33, 72], [53, 110, 38, 34, 69], [54, 112, 36, 35, 73],  
+    [54, 114, 35, 36, 77], [55, 116, 37, 36, 80], [56, 117, 38, 35, 82],  
+    [56, 119, 39, 34, 79], [57, 121, 40, 33, 76], [57, 123, 41, 32, 74]  
+];
+
+// --- State ---
+const currentRound = ref(1);
+const currentCash = ref(initialCash);
+const isGameOver = ref(false);
+const currentPhase = ref('INTRO'); 
+
+const myPortfolio = ref({ EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 });
+const currentStocks = ref([]);
+
+
+// --- Functions ---
+const loadRoundData = (round) => {
+    const priceIndex = round - 1;
+    const prices = allRoundPrices[priceIndex] || allRoundPrices[0];
+    currentStocks.value = stockInfo.map((info, idx) => ({
+        ...info,
+        price: prices[idx],
+        buyQty: null 
+    }));
+};
+
+const currentSituationText = computed(() => situations[currentRound.value - 1] || "ไม่มีข้อมูลเหตุการณ์");
+const currentAIAdviceText = computed(() => aiAdviceList[currentRound.value - 1] || "ไม่มีคำแนะนำ");
+
+onMounted(() => { loadRoundData(1); });
+
+// --- Navigation Flow ---
+
+const startGame = () => {
+    currentPhase.value = 'SITUATION';
+};
+
+const goToTradingPhase = () => {
+    currentPhase.value = 'TRADING';
+    window.scrollTo(0,0);
+};
+
+const goToAIPhase = () => {
+    // ยังไม่ตัดเงินจริง แค่เปลี่ยนหน้าไปฟังคำแนะนำ
+    currentPhase.value = 'AI_ADVICE';
+    window.scrollTo(0,0);
+};
+
+const backToTrading = () => {
+    // กลับไปหน้าซื้อขาย โดยค่า buyQty ยังคงอยู่ (เพราะเราไม่ได้ reloadData)
+    currentPhase.value = 'TRADING';
+};
+
+// --- Calculation Helpers ---
+
+const selectedCount = computed(() => currentStocks.value.filter(s => s.buyQty > 0).length);
+const isInputDisabled = (currentQty) => selectedCount.value >= maxSelection && !currentQty;
+
+const rowClassCalculator = (data) => {
+    return data.buyQty > 0 ? 'row-active' : '';
+};
+
+const totalPurchaseThisRound = computed(() => {
+    return currentStocks.value.reduce((sum, stock) => sum + (stock.price * (stock.buyQty || 0)), 0);
+});
+
+// --- Core Logic (Confirm & Next) ---
+
+const confirmAndNextRound = () => {
+    // Logic การจบรอบจริง ย้ายมาจาก handleEndRound เดิม
+    
+    // 1. ตัดเงิน
+    currentCash.value -= totalPurchaseThisRound.value;
+    
+    // 2. เอาหุ้นเข้าพอร์ต
+    currentStocks.value.forEach(stock => {
+        if(stock.buyQty > 0) myPortfolio.value[stock.symbol] += stock.buyQty;
+    });
+
+    // --- Send Data to Backend ---
+    const logData = {
+        groupName: 'Group4',
+        round: currentRound.value,
+        decision: { type: 'UNKNOWN' }, // Group 4 logic check?
+        // Group 4 has 'confirmAndNextRound'. It has separate Self/AI logic phase? 
+        // Group 4 uses 'goToAIPhase' -> 'confirmAndNextRound' (confirm original choice) OR 'backToTrading' (redecide).
+        // It seems the decision "type" is implicitly 'Original' if confirmed.
+        // Or if they redecided, they are just submitting again. 
+        // For simplicity, we log the action as is.
+        cash: currentCash.value,
+        portfolio: calculatePortfolioValue(),
+        totalValue: currentCash.value + calculatePortfolioValue(),
+        stocks: currentStocks.value.map(s => ({ symbol: s.symbol, buyQty: s.buyQty || 0, price: s.price }))
+    };
+
+    axios.post('http://localhost:3000/api/save-action', logData)
+         .then(() => console.log('Log saved'))
+         .catch(err => console.error('Log error:', err));
+    // ----------------------------
+
+    // 3. ไปรอบถัดไป หรือ จบเกม
+    if (currentRound.value < totalRounds) {
+        currentRound.value++;
+        loadRoundData(currentRound.value); // รีเซ็ตราคาและจำนวนซื้อเป็น null
+        currentPhase.value = 'SITUATION'; 
+        window.scrollTo(0,0);
+    } else {
+        isGameOver.value = true;
+    }
+};
+
+const restartGame = () => {
+    currentRound.value = 1;
+    currentCash.value = initialCash;
+    isGameOver.value = false;
+    currentPhase.value = 'INTRO';
+    myPortfolio.value = { EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 };
+    loadRoundData(1);
+};
+
+const formatCurrency = (val) => new Intl.NumberFormat('th-TH').format(val);
+const formatNumber = (val) => new Intl.NumberFormat('en-US').format(val);
+
+const calculatePortfolioValue = () => {
+    const lastPrices = allRoundPrices[totalRounds - 1];
+    let val = 0;
+    val += myPortfolio.value.EGU * lastPrices[0];
+    val += myPortfolio.value.SMC * lastPrices[1];
+    val += myPortfolio.value.THL * lastPrices[2];
+    val += myPortfolio.value.CPP * lastPrices[3];
+    val += myPortfolio.value.PTX * lastPrices[4];
+    return val;
+};
+</script>
+
+<style scoped>
+/* --- Global Layout --- */
+.game-container {
+  font-family: 'Sarabun', sans-serif;
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 30px;
+  background-color: #f4f6f8;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Animation */
+.fade-in { animation: fadeIn 0.5s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* --- Header --- */
+.header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0;
+}
+.round-info { font-size: 1.8rem; font-weight: 700; color: #333; }
+.cash-info { text-align: right; }
+.cash-amount { font-size: 1.4rem; font-weight: bold; color: #2ecc71; }
+.sub-text { color: #888; font-size: 0.85rem; }
+
+/* --- SITUATION PHASE --- */
+.situation-content { display: flex; flex-direction: column; padding: 20px; text-align: center; }
+.situation-header { font-size: 2rem; font-weight: bold; color: #2c3e50; margin-bottom: 30px; }
+.situation-box {
+    background: white; border: 2px solid #333; padding: 60px 40px; 
+    font-size: 2.2rem; font-weight: 500; color: #333;
+    margin-bottom: 40px; box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+    min-height: 250px; display: flex; align-items: center; justify-content: center;
+}
+
+/* --- TRADING PHASE --- */
+.main-content { display: flex; gap: 30px; flex-wrap: wrap; }
+.panel { flex: 1; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); min-width: 350px; }
+.panel-title { margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; color: #2c3e50; border-left: 5px solid #3498db; padding-left: 10px; }
+
+/* --- AI ADVICE PHASE (NEW CSS) --- */
+.ai-content { display: flex; flex-direction: column; align-items: center; padding: 20px; }
+.ai-header { font-size: 3rem; font-weight: bold; color: #222; margin-bottom: 30px; }
+
+.ai-box-main {
+    width: 80%;
+    border: 3px solid #000;
+    padding: 30px;
+    background-color: white;
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.ai-box-sub {
+    width: 80%;
+    border: 2px solid #000;
+    padding: 15px;
+    background-color: white;
+    text-align: center;
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 40px;
+}
+
+.ai-decision-area {
+    width: 80%;
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.decision-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.btn-ai {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: 2px solid #000;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* --- แก้ไขสีปุ่ม ตัดสินใจใหม่ ให้เป็นสีเดียวกับ btn-action --- */
+.btn-redecide {
+    /* background-color: #d8b4fe;  สีเดิม (ม่วงอ่อน) */
+    /* color: #000; สีเดิม */
+    background-color: #3498db; /* สีน้ำเงินใหม่ */
+    color: white;
+    border: none; /* ลบขอบเดิมของ .btn-ai ออก */
+    border-radius: 6px; /* เพิ่มความโค้งมน */
+}
+.btn-redecide:hover { 
+    /* background-color: #c084fc; สีเดิม */
+    background-color: #2980b9; /* สี hover ใหม่ */
+}
+
+.btn-confirm {
+    background-color: #fff;
+    color: #000;
+}
+.btn-confirm:hover { background-color: #f3f4f6; }
+
+.decision-remark {
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+/* --- แก้ไขสีปุ่ม Next ให้เป็นสีเดียวกับ btn-action --- */
+.btn-next-step {
+    /* background-color: #e9d5ff; สีเดิม (ม่วงอ่อนมาก) */
+    /* border: 2px solid #000; ขอบเดิม */
+    background-color: #3498db; /* สีน้ำเงินใหม่ */
+    color: white;
+    border: none;
+    border-radius: 6px; /* เพิ่มความโค้งมน */
+
+    /* รักษาสไตล์การจัดวางเดิมไว้ */
+    padding: 10px 40px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+.btn-next-step:hover { 
+    /* background-color: #d8b4fe; สีเดิม */
+    background-color: #2980b9; /* สี hover ใหม่ */
+}
+
+.ml-2.pointer {
+    margin-left: 0.5rem;
+    cursor: pointer;
+}
+
+
+/* --- Clean DataTable Style --- */
+:deep(.clean-table .p-datatable-thead > tr > th) {
+    background-color: #f8f9fa; color: #495057; border-bottom: 2px solid #dee2e6; padding: 1rem;
+}
+:deep(.clean-table .p-datatable-tbody > tr > td) {
+    padding: 1rem; border-bottom: 1px solid #f0f0f0;
+}
+:deep(.row-active) { background-color: #e8f5e9 !important; }
+:deep(.row-active:hover) { background-color: #c8e6c9 !important; }
+
+:deep(.p-inputnumber-input) { border-radius: 4px; border: 1px solid #ced4da; padding: 8px; }
+:deep(.p-inputnumber-input:focus) { border-color: #3498db; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); }
+
+/* Footer & Actions */
+.footer-summary { background-color: #f9fafb; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #eee; }
+.status-row, .total-row { display: flex; justify-content: space-between; font-size: 1.1rem; margin-bottom: 5px; }
+.total-amount { font-weight: bold; color: #e74c3c; font-size: 1.2rem; }
+
+.action-area { margin-top: 20px; text-align: right; }
+/* สไตล์ต้นแบบที่เราต้องการให้เหมือน */
+.btn-action {
+    background-color: #3498db !important; border: none !important; padding: 12px 30px !important;
+    font-size: 1.1rem !important; border-radius: 6px !important; transition: background-color 0.2s;
+}
+.btn-action:hover { background-color: #2980b9 !important; }
+.btn-action:disabled { background-color: #95a5a6 !important; cursor: not-allowed; }
+.error-msg { color: #e74c3c; margin-bottom: 10px; font-weight: bold; }
+
+/* Summary Page */
+.summary-content { display: flex; justify-content: center; padding-top: 50px; }
+.summary-card {
+    background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 100%; max-width: 600px; text-align: center;
+}
+.summary-details { font-size: 1.2rem; margin: 20px 0; }
+.summary-details span { font-weight: bold; color: #2c3e50; }
+.grand-total { color: #27ae60; font-size: 2rem; margin-top: 10px; }
+
+/* --- INTRO PHASE --- */
+.intro-content {
+  text-align: center;
+  color: #333;
+  padding: 20px;
+}
+.intro-title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #000;
+}
+.intro-body {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+.instruction-box {
+  background: white;
+  border: 2px solid #000000;
+  padding: 30px;
+  text-align: left;
+  max-width: 900px;
+  margin: 0 auto 40px auto;
+  font-size: 1.3rem;
+  border-radius: 10px;
+}
+.instruction-box ul {
+  list-style-type: disc;
+  padding-left: 40px;
+}
+.instruction-box li {
+  margin-bottom: 10px;
+}
+.btn-pink {
+  background-color: #3498db;
+  border: 2px solid #ffffff;
+  color: #000;
+  padding: 10px 80px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s;
+}
+.btn-pink:hover {
+  background-color: #3498db;
+  transform: scale(1.02);
+}
+.btn-pink:active {
+  transform: scale(0.98);
+}
+</style>
