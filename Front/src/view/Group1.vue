@@ -29,7 +29,21 @@
       </div>
     </div>
 
-    <div class="header" v-if="!isGameOver && currentPhase !== 'INTRO'">
+    <div v-if="!isGameOver && currentPhase === 'USER_INFO'" class="intro-content fade-in">
+        <h1 class="intro-title">ข้อมูลส่วนตัว</h1>
+        <div class="intro-body">
+            <p>กรุณากรอก KKU Mail ของคุณเพื่อเริ่มทำกิจกรรม</p>
+            <div class="input-group" style="max-width: 400px; margin: 20px auto;">
+                <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">KKU Mail</label>
+                <InputText v-model="userEmail" placeholder="example@kku.ac.th" class="w-full" style="width: 100%; padding: 10px;" />
+            </div>
+            <div class="intro-action">
+                <button class="btn-pink" @click="confirmUserInfo">Start Game</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header" v-if="!isGameOver && currentPhase !== 'INTRO' && currentPhase !== 'USER_INFO'">
       <div class="round-info">
         Round {{ currentRound }} of {{ totalRounds }}
       </div>
@@ -78,26 +92,33 @@
                 :rowClass="rowClassCalculator"
                 class="clean-table input-table"
             >
-                <Column field="symbol" header="หุ้น" style="width: 20%">
+                <Column field="symbol" header="หุ้น" style="width: 15%">
                     <template #body="slotProps">
                         <span class="font-bold">{{ slotProps.data.symbol }}</span>
                     </template>
                 </Column>
 
-                <Column header="จำนวนที่ต้องการซื้อ" style="width: 40%">
+                <Column header="มีอยู่" style="width: 15%">
+                    <template #body="slotProps">
+                        <span class="font-bold text-blue-600">{{ myPortfolio[slotProps.data.symbol] || 0 }}</span>
+                    </template>
+                </Column>
+
+                <Column header="จำนวนที่ต้องการซื้อ (ติดลบ = ขาย)" style="width: 35%">
                     <template #body="slotProps">
                         <InputNumber 
                             v-model="slotProps.data.buyQty" 
-                            :min="0" :max="100000"
+                            :min="currentRound > 1 ? -(myPortfolio[slotProps.data.symbol] || 0) : 0" 
+                            :max="100000"
                             placeholder="0"
-                            :disabled="isInputDisabled(slotProps.data.buyQty)"
+                            :disabled="isInputDisabled(slotProps.data)"
                             class="w-full"
                             inputClass="text-center"
                         />
                     </template>
                 </Column>
 
-                <Column header="รวมเป็นเงิน (บาท)" style="width: 40%">
+                <Column header="รวมเป็นเงิน (บาท)" style="width: 35%">
                     <template #body="slotProps">
                         <div class="text-right font-bold" :class="{'text-green-600': slotProps.data.buyQty > 0}">
                             {{ formatNumber((slotProps.data.price * (slotProps.data.buyQty || 0))) }}
@@ -160,6 +181,23 @@
             </div>
             <hr class="divider">
             <h1 class="grand-total">มูลค่ารวมสุทธิ: {{ formatCurrency(currentCash + calculatePortfolioValue()) }} บาท</h1>
+            
+            <!-- Leaderboard Section -->
+            <div v-if="leaderboard.length > 0" class="leaderboard-section fade-in">
+                <h3>🏆 Top 10 Investors ({{ 'Group1' }})</h3>
+                <DataTable :value="leaderboard" stripedRows showGridlines class="clean-table leaderboard-table">
+                    <Column header="อันดับ">
+                        <template #body="slotProps">{{ slotProps.index + 1 }}</template>
+                    </Column>
+                    <Column field="email" header="ผู้เล่น">
+                        <template #body="slotProps">
+                            {{ maskEmail(slotProps.data.email) }}
+                        </template>
+                    </Column>
+                    <Column field="netWorthDisplay" header="มูลค่าสุทธิ (บาท)" class="text-right font-bold text-green-600"></Column>
+                </DataTable>
+            </div>
+
             <Button label="เริ่มเกมใหม่" @click="restartGame" class="btn-action mt-4" />
         </div>
     </div>
@@ -175,6 +213,7 @@ import Column from 'primevue/column';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
+import InputText from 'primevue/inputtext';
 
 // --- Configuration ---
 const totalRounds = 12;
@@ -231,12 +270,17 @@ const currentCash = ref(initialCash);
 const isGameOver = ref(false);
 
 // เปลี่ยนค่าเริ่มต้นเป็น INTRO
+// เปลี่ยนค่าเริ่มต้นเป็น INTRO
 const currentPhase = ref('INTRO'); 
+const userEmail = ref(''); 
 
 const myPortfolio = ref({ EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 });
 const currentStocks = ref([]);
 const decisionAI = ref(false);
 const decisionSelf = ref(false);
+const gameLogs = ref([]); // Store logs for batch save
+const leaderboard = ref([]); // Leaderboard data
+const startTime = ref(null);
 
 const loadRoundData = (round) => {
     const priceIndex = round - 1;
@@ -260,17 +304,59 @@ const currentAiAdvice = computed(() => aiAdvices[currentRound.value - 1] || "ไ
 onMounted(() => { loadRoundData(1); });
 
 // ฟังก์ชันเริ่มเกมจากหน้า Intro
+// ฟังก์ชันเริ่มเกมจากหน้า Intro
 const startGame = () => {
+    startTime.value = new Date();
+    currentPhase.value = 'USER_INFO';
+    window.scrollTo(0,0);
+};
+
+const confirmUserInfo = () => {
+    if(!userEmail.value.trim()) {
+        alert("กรุณากรอก KKU Mail");
+        return;
+    }
     currentPhase.value = 'SITUATION';
+    window.scrollTo(0,0);
 };
 
 const goToTradingPhase = () => {
     currentPhase.value = 'TRADING';
 };
 
-const selectedCount = computed(() => currentStocks.value.filter(s => s.buyQty > 0).length);
-const isInputDisabled = (currentQty) => selectedCount.value >= maxSelection && !currentQty;
-const rowClassCalculator = (data) => data.buyQty > 0 ? 'row-active' : '';
+const selectedCount = computed(() => {
+    // Count distinct stocks that have holding > 0 OR are being bought > 0
+    // Basically, projected holding > 0
+    const projectedHoldings = currentStocks.value.map(s => {
+        const currentQty = myPortfolio.value[s.symbol] || 0;
+        const buySellQty = s.buyQty || 0;
+        return (currentQty + buySellQty) > 0;
+    });
+    return projectedHoldings.filter(Boolean).length;
+});
+
+const isInputDisabled = (stockData) => {
+    // If we are already at max selection (3), we can only edit stocks that we already hold or have selected.
+    // i.e. we cannot start buying a NEW stock (current holding 0, input 0) if count is max.
+    
+    // Check if this specific stock results in a positive holding
+    const currentQty = myPortfolio.value[stockData.symbol] || 0;
+    const inputQty = stockData.buyQty || 0;
+    const isCurrentlyActive = (currentQty + inputQty) > 0;
+
+    // However, the rule is about "adding a new slot".
+    // If projected count is >= 3, and this stock is NOT contributing to that count (i.e. it is 0), then we can't touch it to make it positive.
+    // But wait, if inputQty is 0, and currentQty is 0, then isCurrentlyActive is false.
+    // If we type 1, count goes +1.
+    // If count is ALREADY 3, we can't make it 4.
+    
+    if (selectedCount.value >= maxSelection && !isCurrentlyActive) {
+        return true;
+    }
+    return false;
+};
+
+const rowClassCalculator = (data) => (data.buyQty !== 0 && data.buyQty !== null) ? 'row-active' : '';
 
 const totalPurchaseThisRound = computed(() => {
     return currentStocks.value.reduce((sum, stock) => sum + (stock.price * (stock.buyQty || 0)), 0);
@@ -281,13 +367,15 @@ const handleEndRound = () => {
     
     currentCash.value -= totalPurchaseThisRound.value;
     currentStocks.value.forEach(stock => {
-        if(stock.buyQty > 0) myPortfolio.value[stock.symbol] += stock.buyQty;
+        if(stock.buyQty) myPortfolio.value[stock.symbol] += stock.buyQty;
     });
 
     // --- Send Data to Backend ---
     const logData = {
         groupName: 'Group1',
+        userEmail: userEmail.value,
         round: currentRound.value,
+        situation: currentSituationText.value,
         decision: { type: decisionAI.value ? 'AI' : 'SELF' },
         cash: currentCash.value,
         portfolio: calculatePortfolioValue(),
@@ -295,9 +383,12 @@ const handleEndRound = () => {
         stocks: currentStocks.value.map(s => ({ symbol: s.symbol, buyQty: s.buyQty || 0, price: s.price }))
     };
 
-    axios.post('http://localhost:3000/api/save-action', logData)
-         .then(() => console.log('Log saved'))
-         .catch(err => console.error('Log error:', err));
+    // Store log locally
+    gameLogs.value.push(logData);
+
+    // axios.post('http://localhost:3000/api/save-action', logData)
+    //      .then(() => console.log('Log saved'))
+    //      .catch(err => console.error('Log error:', err));
     // ----------------------------
 
     if (currentRound.value < totalRounds) {
@@ -307,7 +398,41 @@ const handleEndRound = () => {
         window.scrollTo(0,0);
     } else {
         isGameOver.value = true;
+        // Batch Save on Game Over
+        const endTime = new Date();
+        axios.post('http://localhost:3000/api/save-game', {
+            groupName: 'Group1',
+            userEmail: userEmail.value,
+            rounds: gameLogs.value,
+            finalCash: currentCash.value,
+            finalPortfolio: calculatePortfolioValue(),
+            finalTotal: currentCash.value + calculatePortfolioValue(),
+            startTime: startTime.value,
+            endTime: endTime
+        })
+        .then(res => {
+            console.log('Complete game saved:', res.data);
+            fetchLeaderboard(); // Fetch leaderboard after saving
+        })
+        .catch(err => console.error('Game save error:', err));
     }
+
+
+};
+
+const fetchLeaderboard = () => {
+    axios.get(`http://localhost:3000/api/leaderboard/Group1`)
+        .then(res => {
+            leaderboard.value = res.data;
+        })
+        .catch(err => console.error("Error fetching leaderboard:", err));
+};
+
+const maskEmail = (email) => {
+    if(!email) return 'Anonymous';
+    const [name, domain] = email.split('@');
+    if(name.length <= 3) return email;
+    return name.substring(0, 3) + '***@' + domain;
 };
 
 const restartGame = () => {
@@ -316,6 +441,8 @@ const restartGame = () => {
     isGameOver.value = false;
     currentPhase.value = 'INTRO'; // Reset กลับไปหน้า Intro
     myPortfolio.value = { EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 };
+    gameLogs.value = []; // Reset logs
+    startTime.value = null; // Reset start time
     loadRoundData(1);
 };
 
@@ -469,4 +596,70 @@ const calculatePortfolioValue = () => {
 .summary-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
 .summary-details { font-size: 1.2rem; margin: 20px 0; }
 .grand-total { color: #27ae60; font-size: 2rem; margin-top: 10px; }
+
+/* Leaderboard */
+.leaderboard-section { margin-top: 30px; text-align: left; }
+.leaderboard-section h3 { text-align: center; color: #f1c40f; text-shadow: 1px 1px 0 #333; font-size: 1.5rem; margin-bottom: 15px; }
+.leaderboard-table { font-size: 0.95rem; }
+
+/* Responsive Design */
+@media screen and (max-width: 1024px) {
+    /* Tablet (iPad) */
+    .game-container {
+        max-width: 95%;
+        padding: 20px;
+    }
+    .intro-title { font-size: 2.5rem; }
+    .situation-box { font-size: 1.8rem; padding: 40px; }
+    .ai-header { font-size: 2.5rem; }
+    .ai-box-main { width: 95%; font-size: 1.5rem; }
+    .ai-box-sub { width: 95%; font-size: 1.3rem; }
+    .ai-decision-area { width: 95%; gap: 15px; }
+    .btn-ai { font-size: 1.2rem; padding: 15px; }
+}
+
+@media screen and (max-width: 768px) {
+    /* Mobile (Phone) */
+    .game-container {
+        max-width: 100%;
+        margin: 10px;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .round-info { font-size: 1.5rem; }
+    .cash-info { text-align: left; }
+    
+    /* Intro */
+    .intro-title { font-size: 2rem; }
+    .intro-body { font-size: 1rem; }
+    .instruction-box { padding: 15px; font-size: 0.95rem; }
+    .btn-pink { width: 100%; padding: 15px; font-size: 1.2rem; }
+
+    /* Situation */
+    .situation-header { font-size: 1.8rem; }
+    .situation-box { font-size: 1.4rem; padding: 20px; min-height: 200px; }
+
+    /* Trading Phase - Stack Panels */
+    .main-content { flex-direction: column; gap: 20px; }
+    .panel { min-width: 100%; padding: 15px; }
+    .btn-action { width: 100%; padding: 15px !important; font-size: 1.2rem !important; }
+    
+    /* AI Phase */
+    .ai-header { font-size: 2rem; text-align: center; }
+    .ai-box-main { width: 100%; font-size: 1.3rem; padding: 20px; }
+    .ai-decision-area { flex-direction: column; gap: 20px; }
+    .decision-col { width: 100%; }
+    
+    /* Table Adjustments */
+    :deep(.clean-table .p-datatable-thead > tr > th),
+    :deep(.clean-table .p-datatable-tbody > tr > td) {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+}
 </style>

@@ -31,6 +31,20 @@
                 <button class="btn-pink" @click="startGame">Next</button>
             </div>
             </div>
+
+    <div v-if="!isGameOver && currentPhase === 'USER_INFO'" class="intro-content fade-in">
+        <h1 class="intro-title">ข้อมูลส่วนตัว</h1>
+        <div class="intro-body">
+            <p>กรุณากรอก KKU Mail ของคุณเพื่อเริ่มทำกิจกรรม</p>
+            <div class="input-group" style="max-width: 400px; margin: 20px auto;">
+                <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">KKU Mail</label>
+                <InputText v-model="userEmail" placeholder="example@kku.ac.th" class="w-full" style="width: 100%; padding: 10px;" />
+            </div>
+            <div class="intro-action">
+                <button class="btn-pink" @click="confirmUserInfo">Start Game</button>
+            </div>
+        </div>
+    </div>
     
 
     <div v-if="!isGameOver && currentPhase === 'SITUATION'" class="situation-content fade-in">
@@ -45,7 +59,16 @@
         </div>
     </div>
 
-    <div v-else-if="!isGameOver && currentPhase === 'TRADING'" class="trading-content fade-in">
+    <div class="header" v-if="!isGameOver && currentPhase !== 'INTRO' && currentPhase !== 'USER_INFO'">
+      <div class="round-info">
+        Round {{ currentRound }} of {{ totalRounds }}
+      </div>
+      <div class="cash-info">
+        <div class="cash-text">เงินสดคงเหลือ: <span class="cash-amount">{{ formatCurrency(currentCash) }}</span> บาท</div>
+        <small class="sub-text">เพิ่ม-ลด ตามจำนวนหุ้นที่ผู้เข้าร่วมซื้อ-ขาย</small>
+      </div>
+    </div>
+    <div v-if="!isGameOver && currentPhase === 'TRADING'" class="trading-content fade-in">
       
       <div class="main-content">
         
@@ -67,26 +90,33 @@
                 :rowClass="rowClassCalculator"
                 class="clean-table input-table"
             >
-                <Column field="symbol" header="หุ้น" style="width: 20%">
+                <Column field="symbol" header="หุ้น" style="width: 15%">
                     <template #body="slotProps">
                         <span class="font-bold">{{ slotProps.data.symbol }}</span>
                     </template>
                 </Column>
 
-                <Column header="จำนวนที่ต้องการซื้อ" style="width: 40%">
+                <Column header="มีอยู่" style="width: 15%">
+                    <template #body="slotProps">
+                        <span class="font-bold text-blue-600">{{ myPortfolio[slotProps.data.symbol] || 0 }}</span>
+                    </template>
+                </Column>
+
+                <Column header="จำนวนที่ต้องการซื้อ (ติดลบ = ขาย)" style="width: 35%">
                     <template #body="slotProps">
                         <InputNumber 
                             v-model="slotProps.data.buyQty" 
-                            :min="0" :max="100000"
+                            :min="currentRound > 1 ? -(myPortfolio[slotProps.data.symbol] || 0) : 0" 
+                            :max="100000"
                             placeholder="0"
-                            :disabled="isInputDisabled(slotProps.data.buyQty)"
+                            :disabled="isInputDisabled(slotProps.data)"
                             class="w-full"
                             inputClass="text-center"
                         />
                     </template>
                 </Column>
 
-                <Column header="รวมเป็นเงิน (บาท)" style="width: 40%">
+                <Column header="รวมเป็นเงิน (บาท)" style="width: 35%">
                     <template #body="slotProps">
                         <div class="text-right font-bold" :class="{'text-green-600': slotProps.data.buyQty > 0}">
                             {{ formatNumber((slotProps.data.price * (slotProps.data.buyQty || 0))) }}
@@ -107,6 +137,19 @@
                 <div class="total-row">
                     ยอดซื้อรวมรอบนี้: <span class="total-amount">{{ formatNumber(totalPurchaseThisRound) }}</span> บาท
                 </div>
+
+                 <!-- NEW: Redecide Checkboxes -->
+                 <div v-if="isRedecideMode" class="decision-section" :class="{'highlight-warning': !isDecisionMade}">
+                    <hr class="divider-sm">
+                    <div class="checkbox-item">
+                        <Checkbox v-model="decisionAI" :binary="true" inputId="cb-ai" @change="onCheckAI" />
+                        <label for="cb-ai" class="ml-2 pointer">ฉันตัดสินใจตามคำแนะนำของ AI</label>
+                    </div>
+                    <div class="checkbox-item mt-2">
+                        <Checkbox v-model="decisionSelf" :binary="true" inputId="cb-self" @change="onCheckSelf" />
+                        <label for="cb-self" class="ml-2 pointer">ฉันตัดสินใจด้วยตัวเอง</label>
+                    </div>
+                </div>
             </div>
 
             <div class="action-area">
@@ -117,12 +160,26 @@
                 <div v-else-if="currentRound === 1 && selectedCount === 0" class="error-msg">
                     ⚠️ รอบแรกบังคับต้องซื้อหุ้นอย่างน้อย 1 ตัว
                 </div>
+
+                <div v-else-if="isRedecideMode && !isDecisionMade" class="error-msg">
+                    ⚠️ กรุณาเลือกวิธีการตัดสินใจ
+                </div>
                 
-                <Button 
+                 <!-- Button Logic: Normal -> Go AI Phase | Redecide -> Confirm & Next -->
+                 <Button 
+                    v-if="!isRedecideMode"
                     label="ส่งคำสั่งซื้อ" 
                     @click="goToAIPhase" 
                     class="btn-action" 
                     :disabled="totalPurchaseThisRound > currentCash || (currentRound === 1 && selectedCount === 0)"
+                />
+
+                <Button 
+                    v-else
+                    label="ยืนยัน & ไปรอบถัดไป" 
+                    @click="confirmAndNextRound" 
+                    class="btn-action" 
+                    :disabled="totalPurchaseThisRound > currentCash || (currentRound === 1 && selectedCount === 0) || !isDecisionMade"
                 />
             </div>
         </div>
@@ -170,6 +227,23 @@
             </div>
             <hr class="divider">
             <h1 class="grand-total">มูลค่ารวมสุทธิ: {{ formatCurrency(currentCash + calculatePortfolioValue()) }} บาท</h1>
+
+            <!-- Leaderboard Section -->
+            <div v-if="leaderboard.length > 0" class="leaderboard-section fade-in">
+                <h3>🏆 Top 10 Investors ({{ 'Group4' }})</h3>
+                <DataTable :value="leaderboard" stripedRows showGridlines class="clean-table leaderboard-table">
+                    <Column header="อันดับ">
+                        <template #body="slotProps">{{ slotProps.index + 1 }}</template>
+                    </Column>
+                    <Column field="email" header="ผู้เล่น">
+                        <template #body="slotProps">
+                            {{ maskEmail(slotProps.data.email) }}
+                        </template>
+                    </Column>
+                    <Column field="netWorthDisplay" header="มูลค่าสุทธิ (บาท)" class="text-right font-bold text-green-600"></Column>
+                </DataTable>
+            </div>
+
             <Button label="เริ่มเกมใหม่" @click="restartGame" class="btn-action mt-4" />
         </div>
     </div>
@@ -184,6 +258,8 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
+import InputText from 'primevue/inputtext';
+import Checkbox from 'primevue/checkbox';
 
 // --- Configuration ---
 const totalRounds = 12;
@@ -241,9 +317,16 @@ const currentRound = ref(1);
 const currentCash = ref(initialCash);
 const isGameOver = ref(false);
 const currentPhase = ref('INTRO'); 
+const userEmail = ref(''); 
 
 const myPortfolio = ref({ EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 });
 const currentStocks = ref([]);
+const decisionAI = ref(false); // New
+const decisionSelf = ref(false); // New
+const isRedecideMode = ref(false); // New state
+const gameLogs = ref([]);
+const leaderboard = ref([]); // Leaderboard data
+const startTime = ref(null);
 
 
 // --- Functions ---
@@ -255,6 +338,10 @@ const loadRoundData = (round) => {
         price: prices[idx],
         buyQty: null 
     }));
+    // Reset Redecide State on new round
+    isRedecideMode.value = false;
+    decisionAI.value = false;
+    decisionSelf.value = false;
 };
 
 const currentSituationText = computed(() => situations[currentRound.value - 1] || "ไม่มีข้อมูลเหตุการณ์");
@@ -265,7 +352,18 @@ onMounted(() => { loadRoundData(1); });
 // --- Navigation Flow ---
 
 const startGame = () => {
+    startTime.value = new Date();
+    currentPhase.value = 'USER_INFO';
+    window.scrollTo(0,0);
+};
+
+const confirmUserInfo = () => {
+    if(!userEmail.value.trim()) {
+        alert("กรุณากรอก KKU Mail");
+        return;
+    }
     currentPhase.value = 'SITUATION';
+    window.scrollTo(0,0);
 };
 
 const goToTradingPhase = () => {
@@ -281,17 +379,38 @@ const goToAIPhase = () => {
 
 const backToTrading = () => {
     // กลับไปหน้าซื้อขาย โดยค่า buyQty ยังคงอยู่ (เพราะเราไม่ได้ reloadData)
+    isRedecideMode.value = true;
     currentPhase.value = 'TRADING';
 };
+const onCheckAI = () => { if(decisionAI.value) decisionSelf.value = false; };
+const onCheckSelf = () => { if(decisionSelf.value) decisionAI.value = false; };
+const isDecisionMade = computed(() => decisionAI.value || decisionSelf.value);
 
 // --- Calculation Helpers ---
 
-const selectedCount = computed(() => currentStocks.value.filter(s => s.buyQty > 0).length);
-const isInputDisabled = (currentQty) => selectedCount.value >= maxSelection && !currentQty;
+const selectedCount = computed(() => {
+    // Count distinct stocks that have holding > 0 OR are being bought > 0
+    // Basically, projected holding > 0
+    const projectedHoldings = currentStocks.value.map(s => {
+        const currentQty = myPortfolio.value[s.symbol] || 0;
+        const buySellQty = s.buyQty || 0;
+        return (currentQty + buySellQty) > 0;
+    });
+    return projectedHoldings.filter(Boolean).length;
+});
 
-const rowClassCalculator = (data) => {
-    return data.buyQty > 0 ? 'row-active' : '';
+const isInputDisabled = (stockData) => {
+    const currentQty = myPortfolio.value[stockData.symbol] || 0;
+    const inputQty = stockData.buyQty || 0;
+    const isCurrentlyActive = (currentQty + inputQty) > 0;
+    
+    if (selectedCount.value >= maxSelection && !isCurrentlyActive) {
+        return true;
+    }
+    return false;
 };
+
+const rowClassCalculator = (data) => (data.buyQty !== 0 && data.buyQty !== null) ? 'row-active' : '';
 
 const totalPurchaseThisRound = computed(() => {
     return currentStocks.value.reduce((sum, stock) => sum + (stock.price * (stock.buyQty || 0)), 0);
@@ -307,28 +426,24 @@ const confirmAndNextRound = () => {
     
     // 2. เอาหุ้นเข้าพอร์ต
     currentStocks.value.forEach(stock => {
-        if(stock.buyQty > 0) myPortfolio.value[stock.symbol] += stock.buyQty;
+        if(stock.buyQty) myPortfolio.value[stock.symbol] += stock.buyQty;
     });
 
     // --- Send Data to Backend ---
     const logData = {
         groupName: 'Group4',
+        userEmail: userEmail.value,
         round: currentRound.value,
-        decision: { type: 'UNKNOWN' }, // Group 4 logic check?
-        // Group 4 has 'confirmAndNextRound'. It has separate Self/AI logic phase? 
-        // Group 4 uses 'goToAIPhase' -> 'confirmAndNextRound' (confirm original choice) OR 'backToTrading' (redecide).
-        // It seems the decision "type" is implicitly 'Original' if confirmed.
-        // Or if they redecided, they are just submitting again. 
-        // For simplicity, we log the action as is.
+        situation: currentSituationText.value,
+        decision: { type: isRedecideMode.value && decisionAI.value ? 'AI' : 'SELF' }, // Logic: If Redecide Mode -> Check checkbox. If not -> 'SELF'
         cash: currentCash.value,
         portfolio: calculatePortfolioValue(),
         totalValue: currentCash.value + calculatePortfolioValue(),
         stocks: currentStocks.value.map(s => ({ symbol: s.symbol, buyQty: s.buyQty || 0, price: s.price }))
     };
 
-    axios.post('http://localhost:3000/api/save-action', logData)
-         .then(() => console.log('Log saved'))
-         .catch(err => console.error('Log error:', err));
+    gameLogs.value.push(logData);
+    // Data stored locally, will be sent at game end
     // ----------------------------
 
     // 3. ไปรอบถัดไป หรือ จบเกม
@@ -339,7 +454,43 @@ const confirmAndNextRound = () => {
         window.scrollTo(0,0);
     } else {
         isGameOver.value = true;
+        // Batch Save on Game Over
+        const endTime = new Date();
+        axios.post('http://localhost:3000/api/save-game', {
+            groupName: 'Group4',
+            userEmail: userEmail.value,
+            rounds: gameLogs.value,
+            finalCash: currentCash.value,
+            finalPortfolio: calculatePortfolioValue(),
+            finalTotal: currentCash.value + calculatePortfolioValue(),
+            startTime: startTime.value,
+            endTime: endTime
+        })
+        .then(res => {
+            console.log('Complete game saved:', res.data);
+            fetchLeaderboard();
+        })
+        .catch(err => console.error('Game save error:', err));
     }
+
+
+};
+
+
+
+const fetchLeaderboard = () => {
+    axios.get(`http://localhost:3000/api/leaderboard/Group4`)
+        .then(res => {
+            leaderboard.value = res.data;
+        })
+        .catch(err => console.error("Error fetching leaderboard:", err));
+};
+
+const maskEmail = (email) => {
+    if(!email) return 'Anonymous';
+    const [name, domain] = email.split('@');
+    if(name.length <= 3) return email;
+    return name.substring(0, 3) + '***@' + domain;
 };
 
 const restartGame = () => {
@@ -348,6 +499,8 @@ const restartGame = () => {
     isGameOver.value = false;
     currentPhase.value = 'INTRO';
     myPortfolio.value = { EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 };
+    gameLogs.value = [];
+    startTime.value = null; // Reset start time
     loadRoundData(1);
 };
 
@@ -601,5 +754,79 @@ const calculatePortfolioValue = () => {
 }
 .btn-pink:active {
   transform: scale(0.98);
+}
+
+/* Checkbox & Redecide Styles */
+.decision-section { margin-top: 15px; padding: 5px; border-radius: 4px; transition: background-color 0.3s; }
+.highlight-warning { border: 1px dashed #e74c3c; background-color: #fff5f5; }
+.checkbox-item { display: flex; align-items: center; font-size: 1rem; color: #333; }
+.divider-sm { border: 0; border-top: 1px solid #e0e0e0; margin: 10px 0; }
+.ml-2.pointer { margin-left: 0.5rem; cursor: pointer; }
+.mt-2 { margin-top: 0.5rem; }
+
+/* Leaderboard */
+.leaderboard-section { margin-top: 30px; text-align: left; }
+.leaderboard-section h3 { text-align: center; color: #f1c40f; text-shadow: 1px 1px 0 #333; font-size: 1.5rem; margin-bottom: 15px; }
+.leaderboard-table { font-size: 0.95rem; }
+
+/* Responsive Design */
+@media screen and (max-width: 1024px) {
+    /* Tablet (iPad) */
+    .game-container {
+        max-width: 95%;
+        padding: 20px;
+    }
+    .intro-title { font-size: 2.5rem; }
+    .situation-box { font-size: 1.8rem; padding: 40px; }
+    .ai-header { font-size: 2.5rem; }
+    .ai-box-main { width: 95%; font-size: 1.5rem; }
+    .ai-box-sub { width: 95%; font-size: 1.3rem; }
+    .ai-decision-area { width: 95%; gap: 15px; }
+    .btn-ai { font-size: 1.2rem; padding: 15px; }
+}
+
+@media screen and (max-width: 768px) {
+    /* Mobile (Phone) */
+    .game-container {
+        max-width: 100%;
+        margin: 10px;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .round-info { font-size: 1.5rem; }
+    .cash-info { text-align: left; }
+    
+    /* Intro */
+    .intro-title { font-size: 2rem; }
+    .intro-body { font-size: 1rem; }
+    .instruction-box { padding: 15px; font-size: 0.95rem; }
+    .btn-pink { width: 100%; padding: 15px; font-size: 1.2rem; }
+
+    /* Situation */
+    .situation-header { font-size: 1.8rem; }
+    .situation-box { font-size: 1.4rem; padding: 20px; min-height: 200px; }
+
+    /* Trading Phase - Stack Panels */
+    .main-content { flex-direction: column; gap: 20px; }
+    .panel { min-width: 100%; padding: 15px; }
+    .btn-action { width: 100%; padding: 15px !important; font-size: 1.2rem !important; }
+    
+    /* AI Phase */
+    .ai-header { font-size: 2rem; text-align: center; }
+    .ai-box-main { width: 100%; font-size: 1.3rem; padding: 20px; }
+    .ai-decision-area { flex-direction: column; gap: 20px; }
+    .decision-col { width: 100%; }
+    
+    /* Table Adjustments */
+    :deep(.clean-table .p-datatable-thead > tr > th),
+    :deep(.clean-table .p-datatable-tbody > tr > td) {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
 }
 </style>
