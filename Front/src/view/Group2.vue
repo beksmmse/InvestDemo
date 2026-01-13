@@ -309,7 +309,7 @@ const decisionAI = ref(false); // New
 const decisionSelf = ref(false); // New
 const isRedecideMode = ref(false); // New state to track if user is re-deciding
 
-const myPortfolio = ref({ EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 });
+const myPortfolio = ref({ SCB: 0, CPN: 0, PTT: 0, TRUE: 0, CP: 0 });
 
 const currentStocks = ref([]);
 const gameLogs = ref([]);
@@ -499,7 +499,7 @@ const restartGame = () => {
     currentCash.value = initialCash;
     isGameOver.value = false;
     currentPhase.value = 'INTRO'; // กลับไปหน้า Intro
-    myPortfolio.value = { EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 };
+    myPortfolio.value = { SCB: 0, CPN: 0, PTT: 0, TRUE: 0, CP: 0 };
     gameLogs.value = [];
     startTime.value = null; // Reset start time
     loadRoundData(1);
@@ -511,11 +511,11 @@ const formatNumber = (val) => new Intl.NumberFormat('en-US').format(val);
 const calculatePortfolioValue = () => {
     const lastPrices = allRoundPrices[totalRounds - 1];
     let val = 0;
-    val += myPortfolio.value.EGU * lastPrices[0];
-    val += myPortfolio.value.SMC * lastPrices[1];
-    val += myPortfolio.value.THL * lastPrices[2];
-    val += myPortfolio.value.CPP * lastPrices[3];
-    val += myPortfolio.value.PTX * lastPrices[4];
+    val += myPortfolio.value.SCB * lastPrices[0];
+    val += myPortfolio.value.CPN * lastPrices[1];
+    val += myPortfolio.value.PTT * lastPrices[2];
+    val += myPortfolio.value.TRUE * lastPrices[3];
+    val += myPortfolio.value.CP * lastPrices[4];
     return val;
 };
 </script>
