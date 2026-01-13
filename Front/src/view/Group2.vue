@@ -543,54 +543,57 @@ const calculatePortfolioValue = () => {
 .fade-in { animation: fadeIn 0.5s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* --- INTRO PHASE CSS --- */
+/* --- INTRO PHASE (New) --- */
 .intro-content {
-    text-align: center;
-    padding: 20px 40px;
+  text-align: center;
+  color: #333;
+  padding: 20px;
 }
 .intro-title {
-    font-size: 3rem;
-    font-weight: bold;
-    margin-bottom: 20px;
-    color: #000;
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #000;
 }
 .intro-body {
-    font-size: 1.2rem;
-    margin-bottom: 30px;
-    line-height: 1.6;
-    color: #333;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
 }
 .instruction-box {
-    border: 2px solid #000;
-    background-color: white;
-    padding: 30px;
-    text-align: left;
-    margin-bottom: 40px;
-    font-size: 1.1rem;
-    border-radius: 10px;
+  background: white;
+  border: 2px solid #000000;
+  padding: 30px;
+  text-align: left;
+  max-width: 900px;
+  margin: 0 auto 40px auto;
+  font-size: 1.3rem;
+  border-radius: 10px;
 }
 .instruction-box ul {
-    list-style-type: disc;
-    padding-left: 40px;
+  list-style-type: disc;
+  padding-left: 40px;
 }
 .instruction-box li {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 .btn-pink {
-    background-color: #3498db; /* Pink color similar to image */
-    color: #000;
-    border: 2px solid #fffbfb;
-    padding: 15px 80px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    font-weight: bold;
-    transition: transform 0.1s;
+  background-color: #3498db; /* Pink color like image */  
+  border: 2px solid #ffffff;
+  color: #000;
+  padding: 10px 80px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s;
+  
 }
 .btn-pink:hover {
-    background-color: #3498db;
+  background-color: #3498db;
+  transform: scale(1.02);
 }
 .btn-pink:active {
-    transform: scale(0.98);
+  transform: scale(0.98);
 }
 
 /* --- Header --- */
