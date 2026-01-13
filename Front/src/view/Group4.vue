@@ -227,9 +227,9 @@
             <h1 class="grand-total">มูลค่ารวมสุทธิ: {{ formatCurrency(currentCash + calculatePortfolioValue()) }} บาท</h1>
 
             <!-- Leaderboard Section -->
-            <div v-if="leaderboard.length > 0" class="leaderboard-section fade-in">
-                <h3>🏆 Top 10 Investors ({{ 'Group4' }})</h3>
-                <DataTable :value="leaderboard" stripedRows showGridlines class="clean-table leaderboard-table">
+            <div class="leaderboard-section fade-in">
+                <h3>🏆 Top 10 Investors (Group 4)</h3>
+                <DataTable v-if="leaderboard.length > 0" :value="leaderboard" stripedRows showGridlines class="clean-table leaderboard-table">
                     <Column header="อันดับ">
                         <template #body="slotProps">{{ slotProps.index + 1 }}</template>
                     </Column>
@@ -240,6 +240,9 @@
                     </Column>
                     <Column field="netWorthDisplay" header="มูลค่าสุทธิ (บาท)" class="text-right font-bold text-green-600"></Column>
                 </DataTable>
+                <div v-else class="text-center py-4 text-gray-500">
+                    ยังไม่มีข้อมูลรายชื่อผู้เล่นในขณะนี้
+                </div>
             </div>
 
             <div class="summary-actions mt-4" style="display:flex; justify-content:center;">
@@ -347,7 +350,10 @@ const loadRoundData = (round) => {
 const currentSituationText = computed(() => situations[currentRound.value - 1] || "ไม่มีข้อมูลเหตุการณ์");
 const currentAIAdviceText = computed(() => aiAdviceList[currentRound.value - 1] || "ไม่มีคำแนะนำ");
 
-onMounted(() => { loadRoundData(1); });
+onMounted(() => { 
+    loadRoundData(1);
+    fetchLeaderboard();
+});
 
 // --- Navigation Flow ---
 
