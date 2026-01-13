@@ -1,15 +1,36 @@
 <template>
   <div class="game-container">
     
-    <div class="header" v-if="!isGameOver && currentPhase !== 'USER_INFO'">
-      <div class="round-info">
-        Round {{ currentRound }} of {{ totalRounds }}
-      </div>
-      <div class="cash-info">
-        <div class="cash-text">เงินสดคงเหลือ: <span class="cash-amount">{{ formatCurrency(currentCash) }}</span> บาท</div>
-        <small class="sub-text">เพิ่ม-ลด ตามจำนวนหุ้นที่ผู้เข้าร่วมซื้อ-ขาย</small>
-      </div>
-    </div>
+        <div v-if="currentPhase === 'INTRO'" class="intro-content fade-in">
+            <h1 class="intro-title">Instructions</h1>
+            
+            <div class="intro-body">
+                <p>
+                ยินดีต้อนรับเข้าสู่การตอบแบบสอบถาม และขอบคุณที่เข้าร่วมครั้งนี้ในการตอบแบบสอบถามคุณจะต้องการตัดสินใจหลายครั้ง 
+                โดยไม่มีคำตอบถูกหรือผิด เราสนใจเพียงว่าผู้เข้าร่วมตัดสินใจอย่างไร
+                </p>
+                <p>
+                เพื่อเป็นการขอบคุณ คุณจะได้รับค่าตอบแทนตั้งต้นจำนวน 50 บาท นอกจากนี้คุณจะสามารถได้รับเงินรางวัลเพิ่มเติมจากผลกำไรสุดท้ายที่คุณทำได้
+                </p>
+                <p>
+                รางวัลและค่าตอบแทนสุดท้ายที่ได้จากการทำการตอบแบบสอบถาม จะจ่ายหลังจากการตอบแบบสอบถามเสร็จสิ้น
+                </p>
+            </div>
+
+            <div class="instruction-box">
+                <ul>
+                <li>ในการตอบแบบสอบถามนี้ คุณจะทำการตัดสินใจทั้งหมด 12 รอบ</li>
+                <li>สถานการณ์เศรษฐกิจโลก ที่อาจจะมีส่งผลต่อหุ้นที่เราจะซื้อ</li>
+                <li>จากนั้นกรุณาเลือกซื้อได้ 3 จาก 5 ตัวเลือก: A/ B/ C/ D/ E โดยรอบแรกคุณจะสามารถทำได้แค่การซื้อเท่านั้น หลังจากรอบสองเป็นต้นไปถึงจะสามารถทำการซื้อและขายได้</li>
+                <li>เมื่อสิ้นสุดรอบที่ 12 จะมีแบบสอบถามเพื่อเก็บข้อมูลความพึงพอใจและความรู้สึกของผู้เข้าร่วม</li>
+                <li>หลังจบการทดลอง เราจะคำนวณกำไรรวมจาก 12 รอบ ผู้ที่ได้กำไรรวมสูงสุด 3 อันดับแรกจะได้รับรางวัล</li>
+                </ul>
+            </div>
+
+            <div class="intro-action">
+                <button class="btn-pink" @click="startGame">Next</button>
+            </div>
+            </div>
 
     <div v-if="!isGameOver && currentPhase === 'USER_INFO'" class="intro-content fade-in">
         <h1 class="intro-title">ข้อมูลส่วนตัว</h1>
@@ -241,8 +262,7 @@ const allRoundPrices = [
 const currentRound = ref(1);
 const currentCash = ref(initialCash);
 const isGameOver = ref(false);
-
-const currentPhase = ref('USER_INFO');
+const currentPhase = ref('INTRO'); // 'INTRO', 'USER_INFO', 'SITUATION', 'TRADING'
 const userEmail = ref('');
 
 const myPortfolio = ref({ EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 });
@@ -275,20 +295,26 @@ const currentAiAdvice = computed(() => aiAdvices[currentRound.value - 1] || "ไ
 
 onMounted(() => { loadRoundData(1); });
 
-onMounted(() => { loadRoundData(1); });
+// --- Navigation Flow ---
+
+const startGame = () => {
+    startTime.value = new Date();
+    currentPhase.value = 'USER_INFO';
+    window.scrollTo(0,0);
+};
 
 const confirmUserInfo = () => {
     if(!userEmail.value.trim()) {
         alert("กรุณากรอก KKU Mail");
         return;
     }
-    startTime.value = new Date();
     currentPhase.value = 'SITUATION';
     window.scrollTo(0,0);
 };
 
 const goToTradingPhase = () => {
     currentPhase.value = 'TRADING';
+    window.scrollTo(0,0);
 };
 
 const selectedCount = computed(() => {
@@ -396,7 +422,7 @@ const restartGame = () => {
     currentRound.value = 1;
     currentCash.value = initialCash;
     isGameOver.value = false;
-    currentPhase.value = 'USER_INFO';
+    currentPhase.value = 'INTRO';
     myPortfolio.value = { EGU: 0, SMC: 0, THL: 0, CPP: 0, PTX: 0 };
     gameLogs.value = [];
     startTime.value = null; // Reset start time
@@ -502,12 +528,57 @@ const calculatePortfolioValue = () => {
 .summary-details { font-size: 1.2rem; margin: 20px 0; }
 .grand-total { color: #27ae60; font-size: 2rem; margin-top: 10px; }
 
-/* USER INFO STYLE (Copied from Group 1 INTRO) */
-.intro-content { text-align: center; color: #333; padding: 20px; }
-.intro-title { font-size: 3rem; font-weight: bold; margin-bottom: 20px; color: #000; }
-.intro-body { font-size: 1.2rem; line-height: 1.6; margin-bottom: 30px; }
-.btn-pink { background-color: #3498db; border: 2px solid #ffffff; color: #000; padding: 10px 80px; font-size: 1.5rem; cursor: pointer; transition: transform 0.1s; }
-.btn-pink:hover { transform: scale(1.02); }
+/* --- INTRO PHASE --- */
+.intro-content {
+  text-align: center;
+  color: #333;
+  padding: 20px;
+}
+.intro-title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #000;
+}
+.intro-body {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+.instruction-box {
+  background: white;
+  border: 2px solid #000000;
+  padding: 30px;
+  text-align: left;
+  max-width: 900px;
+  margin: 0 auto 40px auto;
+  font-size: 1.3rem;
+  border-radius: 10px;
+}
+.instruction-box ul {
+  list-style-type: disc;
+  padding-left: 40px;
+}
+.instruction-box li {
+  margin-bottom: 10px;
+}
+.btn-pink {
+  background-color: #3498db;
+  border: 2px solid #ffffff;
+  color: #000;
+  padding: 10px 80px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s;
+}
+.btn-pink:hover {
+  background-color: #3498db;
+  transform: scale(1.02);
+}
+.btn-pink:active {
+  transform: scale(0.98);
+}
 
 /* Leaderboard */
 .leaderboard-section { margin-top: 30px; text-align: left; }
