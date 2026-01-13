@@ -85,8 +85,9 @@ const researchConsent = ref(false);
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 40px 20px;
+  padding: clamp(15px, 5vw, 30px);
   font-family: 'Outfit', 'Sarabun', sans-serif;
+  overflow-y: auto;
 }
 
 .glass-card {
@@ -98,8 +99,11 @@ const researchConsent = ref(false);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   width: 100%;
   max-width: 800px;
-  padding: 50px;
+  padding: clamp(25px, 8vw, 50px);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(15px, 4vw, 30px);
 }
 
 .fade-in {
@@ -112,28 +116,28 @@ const researchConsent = ref(false);
 }
 
 .main-title {
-  font-size: 2.5rem;
+  font-size: clamp(1.6rem, 6vw, 2.5rem);
   font-weight: 700;
   color: #1a202c;
-  margin-bottom: 12px;
+  margin-bottom: clamp(8px, 2vw, 12px);
   letter-spacing: -0.5px;
 }
 
 .subtitle {
-  font-size: 1.1rem;
+  font-size: clamp(0.9rem, 3.5vw, 1.1rem);
   color: #4a5568;
-  margin-bottom: 40px;
-  line-height: 1.6;
+  margin-bottom: clamp(20px, 4vw, 30px);
+  line-height: 1.5;
 }
 
 .info-section {
-  margin-bottom: 40px;
+  margin-bottom: clamp(15px, 3vw, 25px);
 }
 
 .info-list-card {
   background: rgba(255, 255, 255, 0.5);
   border-radius: 16px;
-  padding: 24px;
+  padding: clamp(15px, 3vw, 24px);
   display: inline-block;
   text-align: left;
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -146,10 +150,11 @@ const researchConsent = ref(false);
 }
 
 .home-list li {
-  margin-bottom: 12px;
+  margin-bottom: clamp(8px, 2vw, 12px);
   padding-left: 28px;
   position: relative;
   color: #4a5568;
+  font-size: clamp(0.85rem, 3vw, 1rem);
 }
 
 .home-list li::before {
@@ -163,22 +168,22 @@ const researchConsent = ref(false);
 .consent-section {
   background: #f8fafc;
   border-radius: 20px;
-  padding: 30px;
-  margin-bottom: 30px;
+  padding: clamp(15px, 4vw, 30px);
+  margin-bottom: clamp(15px, 3vw, 25px);
   border: 1px solid #e2e8f0;
 }
 
 .consent-title {
-  font-size: 1.1rem;
+  font-size: clamp(0.95rem, 3.5vw, 1.1rem);
   font-weight: 600;
   color: #2d3748;
-  margin-bottom: 20px;
+  margin-bottom: clamp(12px, 3vw, 20px);
 }
 
 .consent-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(10px, 2.5vw, 16px);
   max-width: 500px;
   margin: 0 auto;
   text-align: left;
@@ -190,7 +195,7 @@ const researchConsent = ref(false);
   align-items: center;
   position: relative;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: clamp(0.85rem, 3vw, 1rem);
   user-select: none;
   color: #4a5568;
   transition: color 0.2s;
@@ -253,11 +258,11 @@ const researchConsent = ref(false);
   justify-content: center;
   background-color: #fff5f5;
   color: #c53030;
-  padding: 12px 20px;
+  padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px);
   border-radius: 12px;
-  margin-bottom: 30px;
+  margin-bottom: clamp(15px, 3vw, 20px);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 3vw, 0.95rem);
   border: 1px solid #feb2b2;
 }
 
@@ -266,16 +271,16 @@ const researchConsent = ref(false);
 }
 
 .selection-title {
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 4vw, 1.25rem);
   font-weight: 700;
   color: #1a202c;
-  margin-bottom: 24px;
+  margin-bottom: clamp(12px, 3vw, 20px);
 }
 
 .button-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: clamp(10px, 3vw, 16px);
   transition: opacity 0.3s ease;
 }
 
@@ -285,8 +290,8 @@ const researchConsent = ref(false);
 
 .btn-group {
   width: 100%;
-  padding: 20px;
-  font-size: 1.2rem;
+  padding: clamp(12px, 3vw, 20px);
+  font-size: clamp(0.95rem, 3.5vw, 1.2rem);
   font-weight: 700;
   cursor: pointer;
   background: white;
@@ -321,17 +326,31 @@ const researchConsent = ref(false);
 }
 
 @media (max-width: 640px) {
-  .glass-card {
-    padding: 30px 20px;
+  .home-wrapper {
+    padding: clamp(10px, 3vw, 20px);
   }
-  .main-title {
-    font-size: 1.8rem;
+  .glass-card {
+    gap: clamp(10px, 3vw, 20px);
   }
   .button-grid {
     grid-template-columns: 1fr;
   }
-  .main-title {
-    font-size: 1.8rem;
+}
+
+@media (max-width: 480px) {
+  .home-wrapper {
+    padding: 8px;
+  }
+  .glass-card {
+    padding: clamp(15px, 5vw, 25px);
+    border-radius: 16px;
+  }
+  .checkmark {
+    height: 20px;
+    width: 20px;
+  }
+  .btn-group {
+    padding: clamp(10px, 2.5vw, 15px);
   }
 }
 </style>

@@ -238,11 +238,11 @@ const aiAdvices = [
 ];
 
 const stockInfo = [
-  { id: 1, symbol: 'EGU', industry: 'สาธารณูปโภค' },
-  { id: 2, symbol: 'SMC', industry: 'ธนาคาร' },
-  { id: 3, symbol: 'THL', industry: 'โทรคมนาคม' },
-  { id: 4, symbol: 'CPP', industry: 'ค้าปลีก/เบ็ดเตล็ด' },
-  { id: 5, symbol: 'PTX', industry: 'พลังงาน/น้ำมัน' },
+  { id: 1, symbol: 'SCB', industry: 'ธนาคาร' },
+  { id: 2, symbol: 'CPN', industry: 'อสังหา' },
+  { id: 3, symbol: 'PTT', industry: 'พลังงาน/น้ำมัน' },
+  { id: 4, symbol: 'TRUE', industry: 'โทรคมนาคม' },
+  { id: 5, symbol: 'CP', industry: 'ค้าปลีก/เบ็ดเตล็ด' },
 ];
 
 const allRoundPrices = [
@@ -620,44 +620,286 @@ const calculatePortfolioValue = () => {
     /* Mobile (Phone) */
     .game-container {
         max-width: 100%;
-        margin: 10px;
+        margin: 5px;
         padding: 15px;
         border-radius: 8px;
+        min-height: 100vh;
     }
+    
     .header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 10px;
+        gap: 15px;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e0e0e0;
     }
-    .round-info { font-size: 1.5rem; }
+    .round-info { 
+        font-size: clamp(1.3rem, 5vw, 1.8rem); 
+        font-weight: bold; 
+    }
     .cash-info { text-align: left; }
+    .cash-amount { font-size: clamp(1.1rem, 4vw, 1.4rem); }
+    .sub-text { font-size: clamp(0.8rem, 2.5vw, 0.9rem); }
     
     /* Intro */
-    .intro-title { font-size: 2rem; }
-    .intro-body { font-size: 1rem; }
-    .instruction-box { padding: 15px; font-size: 0.95rem; }
-    .btn-pink { width: 100%; padding: 15px; font-size: 1.2rem; }
+    .intro-content { 
+        padding: 25px 15px; 
+    }
+    .intro-title { 
+        font-size: clamp(1.8rem, 7vw, 2.5rem); 
+        margin-bottom: 20px; 
+    }
+    .intro-body { 
+        font-size: clamp(0.95rem, 3.5vw, 1.15rem); 
+        line-height: 1.8; 
+        margin-bottom: 20px; 
+    }
+    .instruction-box { 
+        padding: 20px; 
+        font-size: clamp(0.95rem, 3.5vw, 1.1rem); 
+        margin-bottom: 25px;
+        border-radius: 8px;
+        max-width: 100%;
+    }
+    .instruction-box ul { 
+        padding-left: 20px; 
+    }
+    .instruction-box li { 
+        margin-bottom: 12px; 
+        line-height: 1.6; 
+    }
+    .btn-pink { 
+        width: 100%; 
+        padding: clamp(12px, 3vw, 18px) 15px; 
+        font-size: clamp(1.1rem, 4vw, 1.3rem); 
+        border-radius: 6px;
+        margin-top: 15px;
+        transition: transform 0.2s;
+    }
+    .btn-pink:active {
+        transform: scale(0.95);
+    }
 
     /* Situation */
-    .situation-header { font-size: 1.8rem; }
-    .situation-box { font-size: 1.4rem; padding: 20px; min-height: 200px; }
+    .situation-content { 
+        padding: 20px 10px; 
+    }
+    .situation-header { 
+        font-size: clamp(1.5rem, 6vw, 2rem); 
+        margin-bottom: 20px; 
+    }
+    .situation-box { 
+        font-size: clamp(1.2rem, 4.5vw, 1.6rem); 
+        padding: 25px 15px; 
+        min-height: 180px;
+        line-height: 1.8;
+        border-radius: 8px;
+        word-wrap: break-word;
+    }
+    .action-area { 
+        margin-top: 20px; 
+        text-align: center;
+    }
+
+    /* AI Advice */
+    .ai-advice-section { 
+        margin-bottom: 25px;
+        padding: 0 10px;
+    }
+    .ai-header { 
+        font-size: clamp(1.3rem, 5vw, 1.6rem); 
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .ai-box { 
+        font-size: clamp(1.1rem, 4vw, 1.4rem); 
+        padding: 20px 15px;
+        line-height: 1.7;
+        border-radius: 8px;
+        word-wrap: break-word;
+    }
 
     /* Trading Phase - Stack Panels */
-    .main-content { flex-direction: column; gap: 20px; }
-    .panel { min-width: 100%; padding: 15px; }
-    .btn-action { width: 100%; padding: 15px !important; font-size: 1.2rem !important; }
+    .main-content { 
+        flex-direction: column; 
+        gap: 20px;
+        padding: 0;
+    }
+    .panel { 
+        min-width: 100%; 
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .panel-title { 
+        font-size: clamp(1.15rem, 4vw, 1.3rem); 
+        margin-bottom: 12px;
+        padding-left: 10px;
+    }
+    .btn-action { 
+        width: 100% !important; 
+        padding: clamp(12px, 3vw, 18px) 15px !important; 
+        font-size: clamp(1.05rem, 4vw, 1.3rem) !important;
+        border-radius: 6px !important;
+        margin-top: 15px !important;
+        transition: all 0.2s;
+    }
+    .btn-action:active {
+        transform: scale(0.95);
+    }
+    .btn-action:disabled {
+        opacity: 0.6;
+    }
+    .error-msg { 
+        font-size: clamp(0.95rem, 3.5vw, 1.1rem); 
+        margin-bottom: 12px;
+        padding: 10px;
+        border-radius: 4px;
+    }
     
-    /* AI Phase */
-    .ai-header { font-size: 2rem; text-align: center; }
-    .ai-box-main { width: 100%; font-size: 1.3rem; padding: 20px; }
-    .ai-decision-area { flex-direction: column; gap: 20px; }
-    .decision-col { width: 100%; }
+    /* Footer Summary */
+    .footer-summary { 
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f9fafb;
+        border-radius: 8px;
+    }
+    .status-row, .total-row { 
+        font-size: clamp(1rem, 3.5vw, 1.15rem); 
+        margin-bottom: 10px;
+        padding: 8px 0;
+        flex-wrap: wrap;
+    }
+    .total-amount { 
+        font-size: clamp(1.1rem, 4vw, 1.3rem); 
+    }
+    .decision-section { 
+        margin-top: 15px;
+        padding: 12px;
+        background-color: white;
+        border-radius: 6px;
+    }
+    .checkbox-item { 
+        font-size: clamp(0.95rem, 3.5vw, 1.1rem); 
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .divider-sm { 
+        margin: 10px 0; 
+    }
+    
+    /* Summary Page */
+    .summary-content { 
+        padding: 15px 10px;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .summary-card { 
+        padding: 25px 15px;
+        border-radius: 8px;
+        width: 100%;
+    }
+    .summary-details { 
+        font-size: clamp(1rem, 3.5vw, 1.2rem); 
+        margin: 15px 0;
+    }
+    .summary-details p {
+        margin-bottom: 10px;
+        line-height: 1.6;
+    }
+    .summary-details span {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .grand-total { 
+        font-size: clamp(1.4rem, 6vw, 2rem); 
+        margin-top: 20px;
+        color: #27ae60;
+        word-wrap: break-word;
+    }
+    
+    /* Leaderboard */
+    .leaderboard-section { 
+        margin-top: 25px;
+        padding: 15px;
+    }
+    .leaderboard-section h3 { 
+        font-size: clamp(1.2rem, 5vw, 1.5rem); 
+        margin-bottom: 15px;
+    }
+    .leaderboard-table { 
+        font-size: clamp(0.85rem, 3vw, 1rem);
+    }
     
     /* Table Adjustments */
-    :deep(.clean-table .p-datatable-thead > tr > th),
+    :deep(.clean-table .p-datatable-thead > tr > th) {
+        padding: 10px 8px;
+        font-size: clamp(0.85rem, 3vw, 1rem);
+        font-weight: bold;
+    }
     :deep(.clean-table .p-datatable-tbody > tr > td) {
-        padding: 0.5rem;
-        font-size: 0.9rem;
+        padding: 10px 8px;
+        font-size: clamp(0.85rem, 3vw, 0.95rem);
+        word-wrap: break-word;
+    }
+    :deep(.p-datatable .p-datatable-tbody > tr) {
+        height: auto;
+    }
+    :deep(.p-inputnumber-input) { 
+        font-size: clamp(0.95rem, 3.5vw, 1rem);
+        padding: 8px !important;
+        width: 100%;
+    }
+    
+    /* Input Group */
+    .input-group {
+        width: 100%;
+        max-width: 100% !important;
+    }
+    :deep(.p-inputtext) {
+        font-size: clamp(0.95rem, 3.5vw, 1.1rem);
+        padding: 10px 12px !important;
+        width: 100% !important;
+    }
+    
+    /* Label Adjustments */
+    label {
+        font-size: clamp(0.95rem, 3.5vw, 1.1rem);
+        font-weight: bold;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    /* Extra Small Phones */
+    .game-container {
+        padding: 12px;
+        margin: 0;
+    }
+    
+    .intro-title { 
+        font-size: clamp(1.6rem, 6vw, 2rem); 
+    }
+    
+    .instruction-box { 
+        padding: 15px; 
+    }
+    
+    .situation-box { 
+        min-height: 150px;
+        padding: 20px 12px;
+    }
+    
+    .panel { 
+        padding: 12px;
+    }
+    
+    .btn-pink, .btn-action { 
+        padding: 14px 12px !important; 
+        font-size: clamp(1rem, 3.5vw, 1.2rem) !important;
     }
 }
 </style>
