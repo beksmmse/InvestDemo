@@ -31,7 +31,7 @@ app.get('/', (req, res) => {
 app.post('/api/save-action', async (req, res) => {
     try {
         const { groupName, round, decision, cash, portfolio, totalValue } = req.body;
-        
+
         console.log(`Received data from ${groupName} - Round ${round}`);
 
         if (!supabase) {
@@ -43,14 +43,14 @@ app.post('/api/save-action', async (req, res) => {
         const { data, error } = await supabase
             .from('transaction_logs')
             .insert([
-                { 
-                    group_name: groupName, 
-                    round: round, 
+                {
+                    group_name: groupName,
+                    round: round,
                     decision_type: decision.type, // 'AI' or 'SELF'
-                    cash_balance: cash, 
+                    cash_balance: cash,
                     portfolio_value: portfolio,
                     total_value: totalValue,
-                    details: req.body 
+                    details: req.body
                 }
             ]);
 
@@ -66,7 +66,7 @@ app.post('/api/save-action', async (req, res) => {
 app.post('/api/save-game', async (req, res) => {
     try {
         const { groupName, userEmail, rounds, finalTotal } = req.body;
-        
+
         console.log(`Received game data from ${groupName} - ${rounds ? rounds.length : 0} rounds`);
 
         if (!Array.isArray(rounds) || rounds.length === 0) {
@@ -74,12 +74,11 @@ app.post('/api/save-game', async (req, res) => {
         }
 
         // --- Transformation Logic ---
-        
-        // 1. Profit Calculation (HTML String)
+
+        // 1. Profit Calculation (Plain String)
         const initialCash = 1000000;
         const profitValue = finalTotal - initialCash;
-        const profitColor = profitValue >= 0 ? 'green' : 'red';
-        const profitHtml = `<span style="color:${profitColor}">${new Intl.NumberFormat('en-US').format(profitValue)}</span>`;
+        const profitDisplay = new Intl.NumberFormat('en-US').format(profitValue);
 
         // 2. Rounds Log Transformation
         const roundsLogFormatted = rounds.map(r => {
@@ -109,7 +108,7 @@ app.post('/api/save-game', async (req, res) => {
         const dbRecord = {
             user_email: userEmail,
             net_worth: new Intl.NumberFormat('en-US').format(finalTotal),
-            profit: profitHtml,
+            profit: profitDisplay,
             rounds_log: roundsLogFormatted // JSONB column
         };
 
@@ -156,7 +155,7 @@ app.get('/api/leaderboard/:groupName', async (req, res) => {
 
         if (error) {
             // Table might not exist yet if no one played
-            if (error.code === '42P01') return res.json([]); 
+            if (error.code === '42P01') return res.json([]);
             throw error;
         }
 
