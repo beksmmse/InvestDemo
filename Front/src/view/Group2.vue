@@ -361,8 +361,15 @@ const startGame = () => {
 }
 
 const confirmUserInfo = () => {
-    if(!userEmail.value.trim()) {
+    const email = userEmail.value.trim();
+    const emailRegex = /^[a-zA-Z0-9._-]+@(kku\.ac\.th|kkumail\.com)$/;
+    
+    if(!email) {
         alert("กรุณากรอก KKU Mail");
+        return;
+    }
+    if (!emailRegex.test(email)) {
+        alert("กรุณากรอก KKU Mail ให้ถูกต้อง (ตัวอย่าง: example@kku.ac.th หรือ example@kkumail.com)");
         return;
     }
     currentPhase.value = 'SITUATION';
