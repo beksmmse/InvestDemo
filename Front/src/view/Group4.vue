@@ -59,15 +59,6 @@
         </div>
     </div>
 
-    <div class="header" v-if="!isGameOver && currentPhase !== 'INTRO' && currentPhase !== 'USER_INFO'">
-      <div class="round-info">
-        Round {{ currentRound }} of {{ totalRounds }}
-      </div>
-      <div class="cash-info">
-        <div class="cash-text">เงินสดคงเหลือ: <span class="cash-amount">{{ formatCurrency(currentCash) }}</span> บาท</div>
-        <small class="sub-text">เพิ่ม-ลด ตามจำนวนหุ้นที่ผู้เข้าร่วมซื้อ-ขาย</small>
-      </div>
-    </div>
     <div v-if="!isGameOver && currentPhase === 'TRADING'" class="trading-content fade-in">
       
       <div class="main-content">
@@ -246,7 +237,7 @@
             </div>
 
             <div class="summary-actions mt-4" style="display:flex; justify-content:center;">
-                <Button label="ไปทำแบบสอบถามเพื่อรับค่าตอบแทน" @click="goToQuestionnaire" class="p-button-success p-button-lg" style="font-weight:bold;" />
+                <Button label="ไปทำแบบสอบถาม" @click="goToQuestionnaire" class="p-button-success p-button-lg" style="font-weight:bold;" />
             </div>
         </div>
     </div>

@@ -195,7 +195,7 @@
             </div>
 
             <div class="summary-actions mt-4" style="display:flex; justify-content:center;">
-                <Button label="ไปทำแบบสอบถามเพื่อรับค่าตอบแทน" @click="goToQuestionnaire" class="p-button-success p-button-lg" style="font-weight:bold;" />
+                <Button label="ไปทำแบบสอบถาม" @click="goToQuestionnaire" class="p-button-success p-button-lg" style="font-weight:bold;" />
             </div>
         </div>
     </div>
