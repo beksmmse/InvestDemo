@@ -251,11 +251,11 @@ const aiAdvices = [
 ];
 
 const stockInfo = [
-  { id: 1, symbol: 'EGU', industry: 'สาธารณูปโภค' },
-  { id: 2, symbol: 'SMC', industry: 'ธนาคาร' },
-  { id: 3, symbol: 'THL', industry: 'โทรคมนาคม' },
-  { id: 4, symbol: 'CPP', industry: 'ค้าปลีก/เบ็ดเตล็ด' },
-  { id: 5, symbol: 'PTX', industry: 'พลังงาน/น้ำมัน' },
+  { id: 1, symbol: 'SCB', industry: 'ธนาคาร' },
+  { id: 2, symbol: 'CPN', industry: 'อสังหา' },
+  { id: 3, symbol: 'PTT', industry: 'พลังงาน/น้ำมัน' },
+  { id: 4, symbol: 'TRUE', industry: 'โทรคมนาคม' },
+  { id: 5, symbol: 'CP', industry: 'ค้าปลีก/เบ็ดเตล็ด' },
 ];
 
 const allRoundPrices = [
