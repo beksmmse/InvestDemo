@@ -182,23 +182,10 @@
             <hr class="divider">
             <h1 class="grand-total">มูลค่ารวมสุทธิ: {{ formatCurrency(currentCash + calculatePortfolioValue()) }} บาท</h1>
             
-            <!-- Leaderboard Section -->
-            <div v-if="leaderboard.length > 0" class="leaderboard-section fade-in">
-                <h3>🏆 Top 10 Investors ({{ 'Group1' }})</h3>
-                <DataTable :value="leaderboard" stripedRows showGridlines class="clean-table leaderboard-table">
-                    <Column header="อันดับ">
-                        <template #body="slotProps">{{ slotProps.index + 1 }}</template>
-                    </Column>
-                    <Column field="email" header="ผู้เล่น">
-                        <template #body="slotProps">
-                            {{ maskEmail(slotProps.data.email) }}
-                        </template>
-                    </Column>
-                    <Column field="netWorthDisplay" header="มูลค่าสุทธิ (บาท)" class="text-right font-bold text-green-600"></Column>
-                </DataTable>
-            </div>
 
-            <Button label="เริ่มเกมใหม่" @click="restartGame" class="btn-action mt-4" />
+            <div class="summary-actions mt-4" style="display:flex; justify-content:center;">
+                <Button label="ไปทำแบบสอบถามเพื่อรับค่าตอบแทน" @click="goToQuestionnaire" class="p-button-success p-button-lg" style="font-weight:bold;" />
+            </div>
         </div>
     </div>
 
@@ -440,6 +427,10 @@ const maskEmail = (email) => {
     const [name, domain] = email.split('@');
     if(name.length <= 3) return email;
     return name.substring(0, 3) + '***@' + domain;
+};
+
+const goToQuestionnaire = () => {
+    window.open('https://docs.google.com/forms/d/e/1FAIpQLSeqd6oIsU0ZKt2XXy2iQmX36BJEFFFrkkpkhRLxrfPIXFE3LA/viewform?pli=1', '_blank');
 };
 
 const restartGame = () => {

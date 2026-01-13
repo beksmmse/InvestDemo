@@ -191,7 +191,9 @@
                 </DataTable>
             </div>
 
-            <Button label="เริ่มเกมใหม่" @click="restartGame" class="btn-action mt-4" />
+            <div class="summary-actions mt-4" style="display:flex; justify-content:center;">
+                <Button label="ไปทำแบบสอบถามเพื่อรับค่าตอบแทน" @click="goToQuestionnaire" class="p-button-success p-button-lg" style="font-weight:bold;" />
+            </div>
         </div>
     </div>
 
@@ -423,6 +425,10 @@ const maskEmail = (email) => {
     const [name, domain] = email.split('@');
     if(name.length <= 3) return email;
     return name.substring(0, 3) + '***@' + domain;
+};
+
+const goToQuestionnaire = () => {
+    window.open('https://docs.google.com/forms/d/e/1FAIpQLSeqd6oIsU0ZKt2XXy2iQmX36BJEFFFrkkpkhRLxrfPIXFE3LA/viewform?pli=1', '_blank');
 };
 
 const restartGame = () => {
