@@ -1,0 +1,17 @@
+# Render deployment configuration for backend
+# Place this file in the root of your Back folder
+
+{
+  "buildCommand": "npm install",
+  "startCommand": "node server.js",
+  "envVars": [
+    {
+      "key": "NODE_ENV",
+      "value": "production"
+    },
+    {
+      "key": "PORT",
+      "value": "3000"
+    }
+  ]
+}
