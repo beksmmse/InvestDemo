@@ -35,7 +35,7 @@
             <p>กรุณากรอก KKU Mail ของคุณเพื่อเริ่มทำกิจกรรม</p>
             <div class="input-group" style="max-width: 400px; margin: 20px auto;">
                 <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">KKU Mail</label>
-                <InputText v-model="userEmail" placeholder="example@kku.ac.th" class="w-full" style="width: 100%; padding: 10px;" />
+                <InputText v-model="userEmail" placeholder="example@kku.ac.th" class="w-full" style="width: 100%; padding: 10px;" lang="th" />
             </div>
             <div class="intro-action">
                 <button class="btn-pink" @click="confirmUserInfo">Start Game</button>
